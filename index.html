@@ -1092,11 +1092,21 @@
         class EvolutionGame {
             constructor() {
                 this.canvas = document.getElementById('gameCanvas');
-                this.ctx = this.canvas.getContext('2d');
+                this.ctx = this.canvas.getContext('2d', { alpha: false }); // 优化：禁用alpha通道
                 this.lastTime = 0;
                 this.fps = 60;
                 this.frameCount = 0;
                 this.lastFpsTime = 0;
+                
+                // 渲染优化
+                this.renderScheduled = false;
+                this.lastRenderTime = 0;
+                this.targetFrameTime = 1000 / 60; // 60fps目标
+                
+                // 离屏Canvas缓存
+                this.offscreenCanvas = null;
+                this.offscreenCtx = null;
+                this.staticElementsDirty = true;
                 
                 // 游戏状态
                 this.stage = 1;
@@ -1277,8 +1287,8 @@
                 this.resizeCanvas();
                 window.addEventListener('resize', () => this.resizeCanvas());
                 
-                this.player.x = this.canvas.width / 2;
-                this.player.y = this.canvas.height / 2;
+                this.player.x = (this.canvas.logicalWidth || this.canvas.width) / 2;
+                this.player.y = (this.canvas.logicalHeight || this.canvas.height) / 2;
                 
                 this.setupInput();
                 this.initZones();
@@ -1290,8 +1300,38 @@
             
             resizeCanvas() {
                 const gameArea = document.querySelector('.game-area');
-                this.canvas.width = gameArea.clientWidth;
-                this.canvas.height = gameArea.clientHeight;
+                const dpr = window.devicePixelRatio || 1;
+                
+                // 设置显示尺寸
+                this.canvas.style.width = gameArea.clientWidth + 'px';
+                this.canvas.style.height = gameArea.clientHeight + 'px';
+                
+                // 设置实际渲染尺寸（考虑DPR）
+                this.canvas.width = Math.floor(gameArea.clientWidth * dpr);
+                this.canvas.height = Math.floor(gameArea.clientHeight * dpr);
+                
+                // 缩放上下文以匹配DPR
+                this.ctx.scale(dpr, dpr);
+                
+                // 存储逻辑尺寸供游戏使用
+                this.canvas.logicalWidth = gameArea.clientWidth;
+                this.canvas.logicalHeight = gameArea.clientHeight;
+                
+                // 重新创建离屏Canvas
+                this.createOffscreenCanvas();
+                this.staticElementsDirty = true;
+            }
+            
+            createOffscreenCanvas() {
+                if (this.offscreenCanvas) {
+                    this.offscreenCanvas.width = this.canvas.logicalWidth;
+                    this.offscreenCanvas.height = this.canvas.logicalHeight;
+                } else {
+                    this.offscreenCanvas = document.createElement('canvas');
+                    this.offscreenCanvas.width = this.canvas.logicalWidth || this.canvas.width;
+                    this.offscreenCanvas.height = this.canvas.logicalHeight || this.canvas.height;
+                    this.offscreenCtx = this.offscreenCanvas.getContext('2d');
+                }
             }
             
             setupInput() {
@@ -1385,18 +1425,27 @@
                 const zoneCount = 5;
                 for (let i = 0; i < zoneCount; i++) {
                     this.zones.push({
-                        x: (0.15 + Math.random() * 0.7) * this.canvas.width,
-                        y: (0.15 + Math.random() * 0.7) * this.canvas.height,
+                        x: (0.15 + Math.random() * 0.7) * (this.canvas.logicalWidth || this.canvas.width),
+                        y: (0.15 + Math.random() * 0.7) * (this.canvas.logicalHeight || this.canvas.height),
                         radius: 60 + Math.random() * 40,
                         type: Math.random() > 0.3 ? 'nutrient' : 'energy',
                         richness: 0.5 + Math.random() * 0.5
                     });
                 }
+                this.staticElementsDirty = true;
             }
             
             gameLoop(timestamp) {
+                // 节流渲染以节省电量
+                const elapsed = timestamp - this.lastRenderTime;
+                if (elapsed < this.targetFrameTime) {
+                    requestAnimationFrame((t) => this.gameLoop(t));
+                    return;
+                }
+                
                 const deltaTime = timestamp - this.lastTime;
                 this.lastTime = timestamp;
+                this.lastRenderTime = timestamp;
                 
                 this.frameCount++;
                 if (timestamp - this.lastFpsTime >= 1000) {
@@ -1582,6 +1631,12 @@
             }
             
             updateParticles(dt) {
+                // 限制粒子数量
+                const maxParticles = 100;
+                if (this.particles.length > maxParticles) {
+                    this.particles = this.particles.slice(-maxParticles);
+                }
+                
                 this.particles = this.particles.filter(p => {
                     p.x += p.vx * dt;
                     p.y += p.vy * dt;
@@ -1592,6 +1647,15 @@
             }
             
             updateFloatingTexts(dt) {
+                // 限制浮动文字数量
+                const maxFloatingTexts = 10;
+                if (this.floatingTexts.length > maxFloatingTexts) {
+                    // 移除最旧的
+                    const toRemove = this.floatingTexts.slice(0, this.floatingTexts.length - maxFloatingTexts);
+                    toRemove.forEach(t => t.element.remove());
+                    this.floatingTexts = this.floatingTexts.slice(-maxFloatingTexts);
+                }
+                
                 this.floatingTexts = this.floatingTexts.filter(t => {
                     t.y -= 30 * dt;
                     t.life -= dt;
@@ -1606,63 +1670,97 @@
             }
             
             render() {
-                // 完全清除画布，避免拖影
-                this.ctx.fillStyle = '#0a1628';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                const width = this.canvas.logicalWidth || this.canvas.width;
+                const height = this.canvas.logicalHeight || this.canvas.height;
                 
-                // 绘制背景渐变
-                const bgGradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+                // 绘制静态元素到离屏Canvas（仅在需要时）
+                if (this.staticElementsDirty && this.offscreenCtx) {
+                    this.renderStaticElements(this.offscreenCtx, width, height);
+                    this.staticElementsDirty = false;
+                }
+                
+                // 复制离屏Canvas到主Canvas
+                if (this.offscreenCanvas) {
+                    this.ctx.drawImage(this.offscreenCanvas, 0, 0, width, height);
+                }
+                
+                // 绘制动态元素
+                this.renderDynamicElements(width, height);
+            }
+            
+            renderStaticElements(ctx, width, height) {
+                // 绘制背景
+                const bgGradient = ctx.createLinearGradient(0, 0, width, height);
                 bgGradient.addColorStop(0, '#0a1628');
                 bgGradient.addColorStop(0.5, '#1a2a4a');
                 bgGradient.addColorStop(1, '#0d1b2a');
-                this.ctx.fillStyle = bgGradient;
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                ctx.fillStyle = bgGradient;
+                ctx.fillRect(0, 0, width, height);
                 
-                this.renderZones();
-                this.renderFacilities();
-                this.renderPlayer();
-                this.renderParticles();
-                
-                if (this.stage === 2) {
-                    this.renderStage2();
-                } else if (this.stage === 3) {
-                    this.renderStage3();
-                }
-            }
-            
-            renderZones() {
+                // 绘制资源区（静态部分）
                 this.zones.forEach(zone => {
-                    const gradient = this.ctx.createRadialGradient(
+                    const gradient = ctx.createRadialGradient(
                         zone.x, zone.y, 0,
                         zone.x, zone.y, zone.radius
                     );
                     
                     if (zone.type === 'nutrient') {
-                        gradient.addColorStop(0, `rgba(0, 255, 136, ${0.2 * zone.richness})`);
+                        gradient.addColorStop(0, `rgba(0, 255, 136, ${0.15 * zone.richness})`);
                         gradient.addColorStop(1, 'rgba(0, 255, 136, 0)');
-                    } else {
-                        gradient.addColorStop(0, `rgba(255, 200, 0, ${0.2 * zone.richness})`);
+                    } else if (zone.type === 'energy') {
+                        gradient.addColorStop(0, `rgba(255, 200, 0, ${0.15 * zone.richness})`);
                         gradient.addColorStop(1, 'rgba(255, 200, 0, 0)');
+                    } else {
+                        gradient.addColorStop(0, `rgba(0, 200, 255, ${0.15 * zone.richness})`);
+                        gradient.addColorStop(1, 'rgba(0, 200, 255, 0)');
                     }
                     
-                    this.ctx.fillStyle = gradient;
-                    this.ctx.beginPath();
-                    this.ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
-                    this.ctx.fill();
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+                    ctx.fill();
                     
-                    this.ctx.strokeStyle = zone.type === 'nutrient' ? 'rgba(0, 255, 136, 0.3)' : 'rgba(255, 200, 0, 0.3)';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.setLineDash([5, 5]);
-                    this.ctx.beginPath();
-                    this.ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
-                    this.ctx.stroke();
-                    this.ctx.setLineDash([]);
-                    
+                    // 虚线边框
+                    ctx.strokeStyle = zone.type === 'nutrient' ? 'rgba(0, 255, 136, 0.2)' : 
+                                     zone.type === 'energy' ? 'rgba(255, 200, 0, 0.2)' : 'rgba(0, 200, 255, 0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                });
+            }
+            
+            renderDynamicElements(width, height) {
+                // 绘制设施（半静态，但可能升级）
+                this.renderFacilities();
+                
+                // 绘制玩家
+                this.renderPlayer();
+                
+                // 绘制粒子
+                this.renderParticles();
+                
+                // 阶段特定渲染
+                if (this.stage === 2) {
+                    this.renderStage2();
+                } else if (this.stage === 3) {
+                    this.renderStage3();
+                }
+                
+                // 绘制资源区图标（动态）
+                this.zones.forEach(zone => {
                     this.ctx.font = '20px Arial';
                     this.ctx.textAlign = 'center';
                     this.ctx.textBaseline = 'middle';
-                    this.ctx.fillText(zone.type === 'nutrient' ? '🍃' : '⚡', zone.x, zone.y);
+                    const icon = zone.type === 'nutrient' ? '🍃' : zone.type === 'energy' ? '⚡' : '📡';
+                    this.ctx.fillText(icon, zone.x, zone.y);
                 });
+            }
+            
+            renderZones() {
+                // 已移至renderStaticElements，这里保留空方法以兼容
             }
             
             renderFacilities() {
@@ -2152,15 +2250,18 @@
                     this.unlockAchievement('multicellular', '多细胞生物', '进化到多细胞阶段');
                     
                     this.zones = [];
+                    const width = this.canvas.logicalWidth || this.canvas.width;
+                    const height = this.canvas.logicalHeight || this.canvas.height;
                     for (let i = 0; i < 6; i++) {
                         this.zones.push({
-                            x: (0.1 + Math.random() * 0.8) * this.canvas.width,
-                            y: (0.1 + Math.random() * 0.8) * this.canvas.height,
+                            x: (0.1 + Math.random() * 0.8) * width,
+                            y: (0.1 + Math.random() * 0.8) * height,
                             radius: 70 + Math.random() * 30,
                             type: ['nutrient', 'energy', 'signal'][Math.floor(Math.random() * 3)],
                             richness: 0.6 + Math.random() * 0.4
                         });
                     }
+                    this.staticElementsDirty = true;
                 } else if (this.stage === 3) {
                     document.getElementById('differentiationContent').style.display = 'none';
                     document.getElementById('marineContent').style.display = 'block';
@@ -2168,17 +2269,20 @@
                     this.unlockAchievement('marine', '海洋生物', '进化到海洋生物阶段');
                     
                     this.zones = [];
+                    const cvsWidth = this.canvas.logicalWidth || this.canvas.width;
+                    const cvsHeight = this.canvas.logicalHeight || this.canvas.height;
                     this.territoryData.forEach(t => {
                         if (t.owned) {
                             this.zones.push({
-                                x: t.x * this.canvas.width,
-                                y: t.y * this.canvas.height,
+                                x: t.x * cvsWidth,
+                                y: t.y * cvsHeight,
                                 radius: 100,
                                 type: 'territory',
                                 richness: 1
                             });
                         }
                     });
+                    this.staticElementsDirty = true;
                 } else if (this.stage === 4) {
                     alert('恭喜!你已完成MVP所有阶段!后续内容开发中...');
                     this.stage = 3;
