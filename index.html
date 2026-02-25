@@ -238,12 +238,12 @@
             background: rgba(10, 22, 40, 0.98);
             backdrop-filter: blur(15px);
             border-top: 1px solid rgba(0, 255, 255, 0.2);
-            border-radius: 20px 20px 0 0;
-            padding: 8px 16px 16px;
-            transform: translateY(calc(100% - 36px));
+            border-radius: 16px 16px 0 0;
+            padding: 6px 12px 12px;
+            transform: translateY(calc(100% - 28px));
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 90;
-            max-height: 40vh;
+            max-height: 22vh;
             overflow-y: auto;
         }
         
@@ -252,7 +252,7 @@
         }
         
         .deploy-panel.collapsed {
-            transform: translateY(calc(100% - 36px));
+            transform: translateY(calc(100% - 28px));
         }
         
         .deploy-panel-header {
@@ -1215,8 +1215,8 @@
                 
                 // 资源系统
                 this.resources = {
-                    nutrients: 50,
-                    energy: 30,
+                    nutrients: 10,
+                    energy: 0,
                     cells: 1,
                     signals: 0,
                     nerveCells: 0,
@@ -1538,6 +1538,42 @@
                         e.preventDefault();
                     }
                 }, { passive: false });
+                
+                // 部署面板触摸滑动收起
+                this.setupDeployPanelSwipe();
+            }
+            
+            setupDeployPanelSwipe() {
+                const panel = document.getElementById('deployPanel');
+                const header = panel.querySelector('.deploy-panel-header');
+                let startY = 0;
+                let startTime = 0;
+                
+                header.addEventListener('touchstart', (e) => {
+                    startY = e.touches[0].clientY;
+                    startTime = Date.now();
+                }, { passive: true });
+                
+                header.addEventListener('touchmove', (e) => {
+                    const currentY = e.touches[0].clientY;
+                    const deltaY = currentY - startY;
+                    
+                    // 向下滑动超过 30px 收起面板
+                    if (deltaY > 30 && !panel.classList.contains('collapsed')) {
+                        this.toggleDeployPanel();
+                        startY = currentY; // 防止重复触发
+                    }
+                }, { passive: true });
+                
+                header.addEventListener('touchend', (e) => {
+                    const endTime = Date.now();
+                    const deltaTime = endTime - startTime;
+                    
+                    // 快速滑动（少于 200ms）也触发收起/展开
+                    if (deltaTime < 200) {
+                        this.toggleDeployPanel();
+                    }
+                }, { passive: true });
             }
             
             initZones() {
