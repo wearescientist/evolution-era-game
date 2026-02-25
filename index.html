@@ -1236,7 +1236,7 @@
                 };
                 
                 this.resourceRates = {
-                    nutrients: 0,
+                    nutrients: 0.5,  // 初始被动增长
                     energy: 0,
                     signals: 0,
                     food: 0,
@@ -1383,6 +1383,11 @@
                 this.setupInput();
                 this.initZones();
                 this.loadGame();
+                
+                // 初始化UI显示
+                this.updateResourcesUI();
+                this.updateFacilityUI();
+                this.updateEvolutionUI();
                 
                 requestAnimationFrame((t) => this.gameLoop(t));
                 setInterval(() => this.secondUpdate(), 1000);
