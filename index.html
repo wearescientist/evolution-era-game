@@ -1309,10 +1309,13 @@
                 });
                 
                 // 触摸事件 - 改进版
+                let touchStartTime = 0;
+                
                 this.canvas.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     if (this.touchId !== null) return;
                     
+                    touchStartTime = Date.now();
                     const touch = e.touches[0];
                     this.touchId = touch.identifier;
                     const rect = this.canvas.getBoundingClientRect();
@@ -1325,7 +1328,7 @@
                 
                 this.canvas.addEventListener('touchmove', (e) => {
                     e.preventDefault();
-                    if (!this.touchActive) return;
+                    if (!this.touchActive || this.touchId === null) return;
                     
                     for (let i = 0; i < e.touches.length; i++) {
                         if (e.touches[i].identifier === this.touchId) {
@@ -1340,10 +1343,19 @@
                 
                 const endTouch = (e) => {
                     e.preventDefault();
-                    this.touchActive = false;
-                    this.touchId = null;
-                    this.player.targetX = null;
-                    this.player.targetY = null;
+                    let found = false;
+                    for (let i = 0; i < e.changedTouches.length; i++) {
+                        if (e.changedTouches[i].identifier === this.touchId) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        this.touchActive = false;
+                        this.touchId = null;
+                        this.player.targetX = null;
+                        this.player.targetY = null;
+                    }
                 };
                 
                 this.canvas.addEventListener('touchend', endTouch);
@@ -1428,18 +1440,20 @@
             updatePlayerMovement(dt) {
                 let dx = 0;
                 let dy = 0;
+                let usingKeyboard = false;
                 
-                if (this.keys.w || this.keys.ArrowUp) dy -= 1;
-                if (this.keys.s || this.keys.ArrowDown) dy += 1;
-                if (this.keys.a || this.keys.ArrowLeft) dx -= 1;
-                if (this.keys.d || this.keys.ArrowRight) dx += 1;
+                if (this.keys.w || this.keys.ArrowUp) { dy -= 1; usingKeyboard = true; }
+                if (this.keys.s || this.keys.ArrowDown) { dy += 1; usingKeyboard = true; }
+                if (this.keys.a || this.keys.ArrowLeft) { dx -= 1; usingKeyboard = true; }
+                if (this.keys.d || this.keys.ArrowRight) { dx += 1; usingKeyboard = true; }
                 
-                if (this.player.targetX !== null && this.player.targetY !== null) {
+                // 优先使用键盘输入，触摸作为备选
+                if (!usingKeyboard && this.player.targetX !== null && this.player.targetY !== null) {
                     const targetDx = this.player.targetX - this.player.x;
                     const targetDy = this.player.targetY - this.player.y;
                     const dist = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
                     
-                    if (dist > 10) {
+                    if (dist > 5) {
                         dx = targetDx / dist;
                         dy = targetDy / dist;
                     }
@@ -1447,8 +1461,10 @@
                 
                 if (dx !== 0 || dy !== 0) {
                     const len = Math.sqrt(dx * dx + dy * dy);
-                    dx /= len;
-                    dy /= len;
+                    if (len > 0) {
+                        dx /= len;
+                        dy /= len;
+                    }
                 }
                 
                 const accel = 800;
@@ -1478,6 +1494,10 @@
                 this.resourceRates = { nutrients: 0, energy: 0, signals: 0, food: 0, swarmPoints: 0 };
                 const efficiency = 1 + this.upgrades.efficiency.level * this.upgrades.efficiency.effect;
                 
+                // 重置资源上限到基础值
+                this.resourceCaps.nutrients = 100 + this.resources.cells * 20;
+                this.resourceCaps.energy = 100 + this.resources.cells * 15;
+                
                 this.facilities.forEach(facility => {
                     const type = this.getFacilityType(facility.type);
                     if (!type) return;
@@ -1498,23 +1518,23 @@
                             
                             if (type.production) {
                                 for (let [res, amount] of Object.entries(type.production)) {
-                                    const produced = amount * efficiency * dt;
+                                    const produced = amount * efficiency * facility.level * dt;
                                     this.resources[res] = Math.min(
                                         this.resources[res] + produced,
                                         this.resourceCaps[res] || Infinity
                                     );
-                                    this.resourceRates[res] += amount * efficiency;
+                                    this.resourceRates[res] += amount * efficiency * facility.level;
                                 }
                             }
                         }
                     } else if (type.production) {
                         for (let [res, amount] of Object.entries(type.production)) {
-                            const produced = amount * efficiency * dt;
+                            const produced = amount * efficiency * facility.level * dt;
                             this.resources[res] = Math.min(
                                 this.resources[res] + produced,
                                 this.resourceCaps[res] || Infinity
                             );
-                            this.resourceRates[res] += amount * efficiency;
+                            this.resourceRates[res] += amount * efficiency * facility.level;
                         }
                     }
                     
@@ -1530,6 +1550,7 @@
                 
                 if (this.stage >= 3) {
                     const ownedTerritories = this.territoryData.filter(t => t.owned).length;
+                    this.resources.territories = ownedTerritories;
                     const income = ownedTerritories * 2 * dt;
                     this.resources.food = Math.min(
                         this.resources.food + income,
@@ -1585,7 +1606,16 @@
             }
             
             render() {
-                this.ctx.fillStyle = 'rgba(10, 22, 40, 0.3)';
+                // 完全清除画布，避免拖影
+                this.ctx.fillStyle = '#0a1628';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // 绘制背景渐变
+                const bgGradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+                bgGradient.addColorStop(0, '#0a1628');
+                bgGradient.addColorStop(0.5, '#1a2a4a');
+                bgGradient.addColorStop(1, '#0d1b2a');
+                this.ctx.fillStyle = bgGradient;
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
                 this.renderZones();
@@ -1907,13 +1937,15 @@
                 const deployPanel = document.getElementById('deployPanel');
                 const statusEl = document.getElementById('deployStatus');
                 
-                // 滑出/滑入面板
-                if (inZone && !this.wasInDeployZone) {
-                    deployPanel.classList.add('visible');
-                } else if (!inZone && this.wasInDeployZone) {
-                    deployPanel.classList.remove('visible');
+                // 滑出/滑入面板 - 使用状态变化检测
+                if (inZone !== this.wasInDeployZone) {
+                    if (inZone) {
+                        deployPanel.classList.add('visible');
+                    } else {
+                        deployPanel.classList.remove('visible');
+                    }
+                    this.wasInDeployZone = inZone;
                 }
-                this.wasInDeployZone = inZone;
                 
                 if (statusEl) {
                     if (inZone) {
@@ -1925,11 +1957,14 @@
                     }
                 }
                 
-                // 更新部署按钮
+                // 每10帧更新一次部署按钮（节流）
+                if (this.frameCount % 10 !== 0) return;
+                
                 const gridId = this.stage === 1 ? 'deployGrid' : this.stage === 2 ? 'deployGrid2' : 'deployGrid3';
                 const grid = document.getElementById(gridId);
                 if (!grid) return;
                 
+                // 检查是否需要更新（比较当前状态和上次状态）
                 const types = this.getAllFacilityTypes();
                 let html = '';
                 
@@ -1939,7 +1974,7 @@
                     let costText = '';
                     for (let [res, amount] of Object.entries(type.cost)) {
                         const hasEnough = this.resources[res] >= amount;
-                        costText += `<span style="color: ${hasEnough ? '#00ff88' : '#ff5555'}">${amount}${this.getResourceShort(res)}</span> `;
+                        costText += `<span style="color: ${hasEnough ? '#00ff88' : '#ff5555'}" data-res="${res}">${amount}${this.getResourceShort(res)}</span> `;
                     }
                     
                     html += `
@@ -1953,7 +1988,9 @@
                     `;
                 }
                 
-                grid.innerHTML = html;
+                if (grid.innerHTML !== html) {
+                    grid.innerHTML = html;
+                }
             }
             
             updateFacilityUI() {
@@ -1981,7 +2018,7 @@
                     let productionText = '';
                     if (type.production) {
                         for (let [res, amount] of Object.entries(type.production)) {
-                            productionText += `+${amount * facility.level}/s ${this.getResourceShort(res)} `;
+                            productionText += `+${(amount * facility.level).toFixed(1)}/s ${this.getResourceShort(res)} `;
                         }
                     }
                     
@@ -1993,7 +2030,7 @@
                                 <div class="facility-stats">${productionText || type.description}</div>
                             </div>
                             <div class="facility-actions">
-                                <button class="facility-btn upgrade" onclick="game.upgradeFacility(${index})" ${canUpgrade ? '' : 'disabled'} title="升级">
+                                <button class="facility-btn upgrade" onclick="game.upgradeFacility(${index})" ${canUpgrade ? '' : 'disabled'} title="升级 (${upgradeCost}能)">
                                     ⬆️
                                 </button>
                                 <button class="facility-btn remove" onclick="game.removeFacility(${index})" title="拆除">
