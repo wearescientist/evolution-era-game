@@ -2,13 +2,14 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>进化纪元 - Evolution Era</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>进化纪元 - 模拟经营</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            touch-action: none;
         }
         
         body {
@@ -16,158 +17,216 @@
             background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0d1b2a 100%);
             min-height: 100vh;
             color: #fff;
-            overflow-x: hidden;
+            overflow: hidden;
         }
         
         .game-container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
             display: grid;
-            grid-template-columns: 280px 1fr 300px;
-            gap: 20px;
-            min-height: 100vh;
-        }
-        
-        @media (max-width: 1200px) {
-            .game-container {
-                grid-template-columns: 250px 1fr 250px;
-            }
+            grid-template-columns: 260px 1fr;
+            grid-template-rows: 1fr auto;
+            gap: 10px;
+            height: 100vh;
         }
         
         @media (max-width: 900px) {
             .game-container {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto auto auto;
+                grid-template-rows: 1fr auto auto;
+            }
+            .left-panel {
+                display: none;
+            }
+            .mobile-resources {
+                display: flex !important;
             }
         }
         
-        /* 左侧面板 */
+        /* 左侧面板 - 设施列表 */
         .left-panel {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 15px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         
-        .stage-indicator {
-            text-align: center;
-            padding: 15px;
-            background: linear-gradient(135deg, rgba(0, 200, 200, 0.3), rgba(0, 150, 255, 0.3));
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-        
-        .stage-name {
-            font-size: 1.2em;
+        .panel-header {
+            font-size: 1.1em;
             font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .facility-count {
+            font-size: 0.8em;
             color: #00ffff;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            background: rgba(0, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 10px;
         }
         
-        .stage-number {
-            font-size: 0.9em;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 5px;
+        .facility-list {
+            flex: 1;
+            overflow-y: auto;
         }
         
-        .resource-section {
-            margin-bottom: 20px;
-        }
-        
-        .section-title {
-            font-size: 0.9em;
-            color: rgba(255, 255, 255, 0.6);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .facility-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px;
             margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .facility-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 255, 255, 0.3);
+        }
+        
+        .facility-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .facility-name {
+            font-weight: bold;
             display: flex;
             align-items: center;
             gap: 8px;
         }
         
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 16px;
-            background: linear-gradient(180deg, #00ffff, #0088ff);
-            border-radius: 2px;
-        }
-        
-        .resource-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-        
-        .resource-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(5px);
-        }
-        
-        .resource-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            margin-right: 10px;
-        }
-        
-        .resource-info {
-            flex: 1;
-        }
-        
-        .resource-name {
-            font-size: 0.85em;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .resource-value {
-            font-size: 1.3em;
-            font-weight: bold;
-            color: #fff;
-        }
-        
-        .resource-rate {
+        .facility-level {
             font-size: 0.75em;
-            color: #00ff88;
+            color: #00ffff;
+            background: rgba(0, 255, 255, 0.15);
+            padding: 2px 8px;
+            border-radius: 8px;
         }
         
-        .resource-rate.negative {
+        .facility-output {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+        }
+        
+        .facility-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .facility-btn {
+            flex: 1;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-upgrade {
+            background: linear-gradient(135deg, #00aa66, #00ff88);
+            color: #000;
+        }
+        
+        .btn-upgrade:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-upgrade:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-remove {
+            background: rgba(255, 80, 80, 0.3);
             color: #ff5555;
         }
         
+        .btn-remove:hover {
+            background: rgba(255, 80, 80, 0.5);
+        }
+        
         /* 中间游戏区域 */
-        .center-panel {
+        .center-area {
             display: flex;
             flex-direction: column;
+            gap: 10px;
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 10px 15px;
+        }
+        
+        .stage-info {
+            display: flex;
+            align-items: center;
             gap: 15px;
+        }
+        
+        .stage-badge {
+            background: linear-gradient(135deg, rgba(0, 200, 200, 0.3), rgba(0, 150, 255, 0.3));
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #00ffff;
+        }
+        
+        .resources-bar {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .resource-mini {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        
+        .resource-mini .value {
+            font-weight: bold;
+            color: #00ff88;
         }
         
         .canvas-container {
             flex: 1;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 16px;
+            border-radius: 12px;
             overflow: hidden;
             position: relative;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            min-height: 400px;
         }
         
         #gameCanvas {
             width: 100%;
             height: 100%;
             display: block;
-            cursor: crosshair;
+            cursor: grab;
+        }
+        
+        #gameCanvas:active {
+            cursor: grabbing;
         }
         
         .canvas-overlay {
@@ -180,7 +239,7 @@
             pointer-events: none;
         }
         
-        .overlay-stat {
+        .zone-indicator {
             background: rgba(0, 0, 0, 0.6);
             padding: 8px 15px;
             border-radius: 20px;
@@ -188,28 +247,112 @@
             backdrop-filter: blur(5px);
         }
         
-        .evolution-bar-container {
+        .zone-indicator.nutrient { color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
+        .zone-indicator.danger { color: #ff5555; border: 1px solid rgba(255, 85, 85, 0.3); }
+        .zone-indicator.normal { color: #aaa; border: 1px solid rgba(255, 255, 255, 0.2); }
+        
+        /* 底部部署菜单 */
+        .deploy-menu {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+        
+        .deploy-menu.visible {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .deploy-title {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .deploy-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .deploy-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        .deploy-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(0, 255, 255, 0.5);
+            transform: translateY(-3px);
+        }
+        
+        .deploy-card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .deploy-card.disabled:hover {
+            transform: none;
+            border-color: transparent;
+        }
+        
+        .deploy-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+        
+        .deploy-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+        
+        .deploy-cost {
+            font-size: 0.75em;
+            color: #00ff88;
+        }
+        
+        .deploy-cost.cannot-afford {
+            color: #ff5555;
+        }
+        
+        /* 进化进度条 */
+        .evolution-bar {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 12px 15px;
         }
         
         .evolution-progress {
-            height: 30px;
+            height: 20px;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
+            border-radius: 10px;
             overflow: hidden;
-            position: relative;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
         .evolution-fill {
             height: 100%;
             background: linear-gradient(90deg, #00ffff, #0088ff, #8800ff);
-            border-radius: 15px;
+            border-radius: 10px;
             transition: width 0.5s ease;
             position: relative;
-            overflow: hidden;
         }
         
         .evolution-fill::after {
@@ -228,22 +371,23 @@
             100% { transform: translateX(100%); }
         }
         
-        .evolution-text {
+        .evolution-info {
             display: flex;
             justify-content: space-between;
-            font-size: 0.9em;
-            color: rgba(255, 255, 255, 0.8);
+            align-items: center;
+        }
+        
+        .evolution-text {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.7);
         }
         
         .evolve-btn {
-            width: 100%;
-            padding: 15px;
-            margin-top: 10px;
+            padding: 8px 20px;
             background: linear-gradient(135deg, #00ffff, #0088ff);
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             color: #000;
-            font-size: 1.1em;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -258,250 +402,13 @@
         }
         
         .evolve-btn.active:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
         }
         
         @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3); }
-            50% { box-shadow: 0 0 40px rgba(0, 255, 255, 0.6); }
-        }
-        
-        /* 右侧面板 */
-        .right-panel {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .upgrade-item, .building-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid transparent;
-        }
-        
-        .upgrade-item:hover, .building-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(0, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-        
-        .upgrade-item.disabled, .building-item.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .upgrade-item.disabled:hover, .building-item.disabled:hover {
-            transform: none;
-            border-color: transparent;
-        }
-        
-        .item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-        
-        .item-name {
-            font-weight: bold;
-            color: #fff;
-        }
-        
-        .item-level {
-            font-size: 0.8em;
-            color: #00ffff;
-            background: rgba(0, 255, 255, 0.1);
-            padding: 2px 8px;
-            border-radius: 10px;
-        }
-        
-        .item-desc {
-            font-size: 0.8em;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 8px;
-        }
-        
-        .item-cost {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .cost-tag {
-            font-size: 0.75em;
-            padding: 3px 8px;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .cost-tag.can-afford {
-            color: #00ff88;
-        }
-        
-        .cost-tag.cannot-afford {
-            color: #ff5555;
-        }
-        
-        /* 阶段2特殊面板 */
-        .differentiation-panel {
-            display: none;
-        }
-        
-        .cell-type-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .cell-type-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-        
-        .cell-type-card:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-3px);
-        }
-        
-        .cell-type-card.selected {
-            border-color: #00ffff;
-            background: rgba(0, 255, 255, 0.1);
-        }
-        
-        .cell-type-icon {
-            font-size: 2em;
-            margin-bottom: 8px;
-        }
-        
-        .cell-type-name {
-            font-size: 0.85em;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .cell-type-count {
-            font-size: 1.2em;
-            color: #00ffff;
-        }
-        
-        .organs-section {
-            margin-top: 15px;
-        }
-        
-        .organ-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .organ-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            background: rgba(0, 0, 0, 0.3);
-        }
-        
-        .organ-icon.formed {
-            background: linear-gradient(135deg, #00ff88, #00aa66);
-        }
-        
-        .organ-info {
-            flex: 1;
-        }
-        
-        .organ-name {
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-        
-        .organ-status {
-            font-size: 0.8em;
-            color: rgba(255, 255, 255, 0.6);
-        }
-        
-        /* 阶段3特殊面板 */
-        .marine-panel {
-            display: none;
-        }
-        
-        .territory-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-        
-        .territory-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-        
-        .territory-card:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .territory-card.owned {
-            border-color: #00ff88;
-            background: rgba(0, 255, 136, 0.1);
-        }
-        
-        .territory-card.contested {
-            border-color: #ffaa00;
-            background: rgba(255, 170, 0, 0.1);
-        }
-        
-        .territory-icon {
-            font-size: 1.5em;
-            margin-bottom: 5px;
-        }
-        
-        .territory-name {
-            font-size: 0.75em;
-            color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .swarm-stats {
-            background: rgba(0, 100, 200, 0.2);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .swarm-stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-        }
-        
-        .swarm-stat-row:last-child {
-            margin-bottom: 0;
+            0%, 100% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(0, 255, 255, 0.6); }
         }
         
         /* 浮动文字效果 */
@@ -509,62 +416,47 @@
             position: absolute;
             pointer-events: none;
             font-weight: bold;
-            animation: floatUp 1s ease-out forwards;
+            font-size: 0.9em;
+            animation: floatUp 1.2s ease-out forwards;
             text-shadow: 0 0 10px currentColor;
+            z-index: 100;
         }
         
         @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-50px) scale(1.2);
-            }
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1.1); }
         }
         
-        /* 进化特效 */
-        .evolution-effect {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1000;
-            display: none;
-        }
-        
-        .evolution-effect.active {
-            display: block;
-        }
-        
-        .evolution-ring {
+        /* 控制提示 */
+        .controls-hint {
             position: absolute;
-            top: 50%;
+            bottom: 10px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            border: 3px solid #00ffff;
-            border-radius: 50%;
-            opacity: 0;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
         }
         
-        .evolution-effect.active .evolution-ring {
-            animation: expandRing 2s ease-out forwards;
+        /* 移动端资源条 */
+        .mobile-resources {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 10px;
+            gap: 10px;
+            overflow-x: auto;
         }
         
-        @keyframes expandRing {
-            0% {
-                width: 0;
-                height: 0;
-                opacity: 1;
-            }
-            100% {
-                width: 200vmax;
-                height: 200vmax;
-                opacity: 0;
-            }
+        .mobile-resource-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85em;
+            white-space: nowrap;
         }
         
         /* 保存按钮 */
@@ -573,7 +465,7 @@
             bottom: 20px;
             right: 20px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
             z-index: 100;
         }
         
@@ -581,240 +473,123 @@
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #fff;
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 0.85em;
+            font-size: 0.8em;
         }
         
         .save-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
         
-        /* 成就弹窗 */
-        .achievement-popup {
-            position: fixed;
-            top: 20px;
-            right: -400px;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.9), rgba(255, 140, 0, 0.9));
-            padding: 15px 20px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: right 0.5s ease;
-            z-index: 1001;
-            box-shadow: 0 5px 30px rgba(255, 140, 0, 0.4);
-        }
-        
-        .achievement-popup.show {
-            right: 20px;
-        }
-        
-        .achievement-icon {
-            font-size: 2em;
-        }
-        
-        .achievement-text {
-            color: #000;
-        }
-        
-        .achievement-title {
-            font-weight: bold;
-            font-size: 1.1em;
-        }
-        
-        .achievement-desc {
-            font-size: 0.85em;
-            opacity: 0.8;
-        }
-        
-        /* 标签页 */
-        .tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
-            background: rgba(0, 0, 0, 0.2);
-            padding: 5px;
-            border-radius: 10px;
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 8px;
-            text-align: center;
+        /* 器官提示 */
+        .organ-hint {
+            background: rgba(136, 68, 255, 0.15);
+            border: 1px solid rgba(136, 68, 255, 0.3);
             border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.85em;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.8em;
         }
         
-        .tab:hover {
-            background: rgba(255, 255, 255, 0.1);
+        .organ-hint-title {
+            color: #aa66ff;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
         
-        .tab.active {
-            background: rgba(0, 255, 255, 0.2);
-            color: #00ffff;
+        .organ-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         
-        .tab-content {
-            display: none;
+        .organ-tag {
+            background: rgba(136, 68, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75em;
         }
         
-        .tab-content.active {
-            display: block;
+        .organ-tag.formed {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
         }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <!-- 左侧面板：资源显示 -->
+        <!-- 左侧面板：设施列表 -->
         <div class="left-panel">
-            <div class="stage-indicator">
-                <div class="stage-name" id="stageName">单细胞</div>
-                <div class="stage-number">阶段 <span id="stageNumber">1</span> / 11</div>
+            <div class="panel-header">
+                <span>已部署设施</span>
+                <span class="facility-count"><span id="facilityCount">0</span>/<span id="maxFacilityCount">1</span></span>
+            </div>
+            <div class="facility-list" id="facilityList">
+                <!-- 设施列表动态生成 -->
             </div>
             
-            <div class="resource-section" id="resourceSection">
-                <div class="section-title">资源</div>
-                <div id="resourceList"></div>
-            </div>
-            
-            <div class="resource-section" id="statSection">
-                <div class="section-title">统计</div>
-                <div id="statList"></div>
+            <!-- 器官提示（阶段2显示） -->
+            <div class="organ-hint" id="organHint" style="display: none;">
+                <div class="organ-hint-title">🧬 器官形成进度</div>
+                <div class="organ-list" id="organList">
+                    <!-- 动态生成 -->
+                </div>
             </div>
         </div>
         
-        <!-- 中间面板：游戏画布 -->
-        <div class="center-panel">
+        <!-- 中间区域 -->
+        <div class="center-area">
+            <!-- 顶部状态栏 -->
+            <div class="top-bar">
+                <div class="stage-info">
+                    <div class="stage-badge" id="stageBadge">阶段1: 单细胞</div>
+                </div>
+                <div class="resources-bar" id="resourcesBar">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+            
+            <!-- 游戏画布 -->
             <div class="canvas-container" id="canvasContainer">
                 <canvas id="gameCanvas"></canvas>
                 <div class="canvas-overlay">
-                    <div class="overlay-stat">FPS: <span id="fpsCounter">60</span></div>
-                    <div class="overlay-stat">运行时间: <span id="playTime">00:00</span></div>
+                    <div class="zone-indicator normal" id="zoneIndicator">📍 普通区域</div>
                 </div>
+                <div class="controls-hint">WASD/方向键移动 或 触摸拖动</div>
             </div>
             
-            <div class="evolution-bar-container">
+            <!-- 进化进度 -->
+            <div class="evolution-bar">
                 <div class="evolution-progress">
                     <div class="evolution-fill" id="evolutionFill" style="width: 0%"></div>
                 </div>
-                <div class="evolution-text">
-                    <span>进化进度</span>
-                    <span id="evolutionPercent">0%</span>
+                <div class="evolution-info">
+                    <span class="evolution-text">进化进度: <span id="evolutionPercent">0%</span></span>
+                    <button class="evolve-btn" id="evolveBtn" onclick="game.attemptEvolution()">✨ 进化</button>
                 </div>
-                <button class="evolve-btn" id="evolveBtn" onclick="game.attemptEvolution()">
-                    ✨ 进化到下一阶段
-                </button>
+            </div>
+            
+            <!-- 底部部署菜单 -->
+            <div class="deploy-menu" id="deployMenu">
+                <div class="deploy-title">🛠️ 可部署设施</div>
+                <div class="deploy-options" id="deployOptions">
+                    <!-- 动态生成 -->
+                </div>
             </div>
         </div>
         
-        <!-- 右侧面板：升级和建筑 -->
-        <div class="right-panel">
-            <!-- 阶段1：单细胞面板 -->
-            <div class="unicellular-panel" id="unicellularPanel">
-                <div class="section-title">升级</div>
-                <div id="upgradeList"></div>
-            </div>
-            
-            <!-- 阶段2：多细胞面板 -->
-            <div class="differentiation-panel" id="differentiationPanel">
-                <div class="tabs">
-                    <div class="tab active" onclick="game.switchTab('differentiation')">分化</div>
-                    <div class="tab" onclick="game.switchTab('organs')">器官</div>
-                </div>
-                
-                <div class="tab-content active" id="differentiationTab">
-                    <div class="section-title">细胞分化</div>
-                    <div class="cell-type-grid">
-                        <div class="cell-type-card" onclick="game.selectCellType('nerve')">
-                            <div class="cell-type-icon">🧠</div>
-                            <div class="cell-type-name">神经细胞</div>
-                            <div class="cell-type-count" id="nerveCount">0</div>
-                        </div>
-                        <div class="cell-type-card" onclick="game.selectCellType('muscle')">
-                            <div class="cell-type-icon">💪</div>
-                            <div class="cell-type-name">肌肉细胞</div>
-                            <div class="cell-type-count" id="muscleCount">0</div>
-                        </div>
-                        <div class="cell-type-card" onclick="game.selectCellType('digestive')">
-                            <div class="cell-type-icon">🍽️</div>
-                            <div class="cell-type-name">消化细胞</div>
-                            <div class="cell-type-count" id="digestiveCount">0</div>
-                        </div>
-                    </div>
-                    <button class="evolve-btn" id="differentiateBtn" onclick="game.differentiateCell()" style="margin-top: 10px;">
-                        分化细胞 (消耗 10 营养)
-                    </button>
-                </div>
-                
-                <div class="tab-content" id="organsTab">
-                    <div class="section-title">器官形成</div>
-                    <div class="organs-section" id="organsList"></div>
-                </div>
-            </div>
-            
-            <!-- 阶段3：海洋生物面板 -->
-            <div class="marine-panel" id="marinePanel">
-                <div class="tabs">
-                    <div class="tab active" onclick="game.switchTab('territory')">领地</div>
-                    <div class="tab" onclick="game.switchTab('swarm')">鱼群</div>
-                </div>
-                
-                <div class="tab-content active" id="territoryTab">
-                    <div class="section-title">领地控制</div>
-                    <div class="territory-grid" id="territoryGrid"></div>
-                    <button class="evolve-btn" id="expandTerritoryBtn" onclick="game.expandTerritory()">
-                        扩张领地
-                    </button>
-                </div>
-                
-                <div class="tab-content" id="swarmTab">
-                    <div class="section-title">鱼群状态</div>
-                    <div class="swarm-stats">
-                        <div class="swarm-stat-row">
-                            <span>鱼群规模</span>
-                            <span id="swarmSize">1</span>
-                        </div>
-                        <div class="swarm-stat-row">
-                            <span>协作加成</span>
-                            <span id="swarmBonus">+0%</span>
-                        </div>
-                        <div class="swarm-stat-row">
-                            <span>领地收益</span>
-                            <span id="territoryIncome">0/秒</span>
-                        </div>
-                    </div>
-                    <div id="swarmUpgradeList"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 进化特效 -->
-    <div class="evolution-effect" id="evolutionEffect">
-        <div class="evolution-ring"></div>
-        <div class="evolution-ring" style="animation-delay: 0.3s"></div>
-        <div class="evolution-ring" style="animation-delay: 0.6s"></div>
-    </div>
-    
-    <!-- 成就弹窗 -->
-    <div class="achievement-popup" id="achievementPopup">
-        <div class="achievement-icon">🏆</div>
-        <div class="achievement-text">
-            <div class="achievement-title">成就解锁</div>
-            <div class="achievement-desc" id="achievementDesc">描述</div>
+        <!-- 移动端资源条 -->
+        <div class="mobile-resources" id="mobileResources">
+            <!-- 动态生成 -->
         </div>
     </div>
     
     <!-- 保存控制 -->
     <div class="save-controls">
         <button class="save-btn" onclick="game.saveGame()">💾 保存</button>
-        <button class="save-btn" onclick="game.exportSave()">📤 导出</button>
-        <button class="save-btn" onclick="game.importSave()">📥 导入</button>
         <button class="save-btn" onclick="game.hardReset()">🔄 重置</button>
     </div>
 
@@ -825,89 +600,174 @@
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.lastTime = 0;
-                this.fps = 60;
-                this.frameCount = 0;
-                this.lastFpsTime = 0;
                 
                 // 游戏状态
                 this.stage = 1;
                 this.playTime = 0;
                 this.paused = false;
                 
-                // 资源系统
-                this.resources = {
-                    nutrients: 0,
-                    energy: 0,
-                    cells: 1,
-                    // 阶段2资源
-                    signals: 0,
-                    nerveCells: 0,
-                    muscleCells: 0,
-                    digestiveCells: 0,
-                    // 阶段3资源
-                    food: 0,
-                    swarmPoints: 0,
-                    territories: 0
+                // 玩家位置
+                this.player = {
+                    x: 0,
+                    y: 0,
+                    radius: 20,
+                    speed: 150,
+                    targetX: null,
+                    targetY: null,
+                    isMoving: false
                 };
                 
-                // 资源上限
+                // 输入状态
+                this.keys = {};
+                this.touchStartX = null;
+                this.touchStartY = null;
+                
+                // 地图配置
+                this.mapWidth = 2000;
+                this.mapHeight = 1500;
+                this.camera = { x: 0, y: 0 };
+                
+                // 生态区域
+                this.zones = [];
+                this.currentZone = 'normal';
+                
+                // 资源系统
+                this.resources = {
+                    nutrients: 20,
+                    energy: 10,
+                    cells: 1
+                };
+                
                 this.resourceCaps = {
                     nutrients: 100,
-                    energy: 100,
-                    signals: 50,
+                    energy: 100
+                };
+                
+                // 设施系统
+                this.facilities = [];
+                this.facilityTypes = {
+                    cilia: {
+                        name: '纤毛收集器',
+                        icon: '🌊',
+                        cost: { nutrients: 10 },
+                        output: { nutrients: 0.5 },
+                        description: '自动收集周围营养',
+                        color: '#00ff88'
+                    },
+                    metabolism: {
+                        name: '代谢囊',
+                        icon: '⚡',
+                        cost: { nutrients: 20 },
+                        output: { energy: 0.3 },
+                        description: '将营养转化为能量',
+                        color: '#ffaa00'
+                    },
+                    membrane: {
+                        name: '细胞膜强化',
+                        icon: '🛡️',
+                        cost: { energy: 30 },
+                        output: { defense: 1 },
+                        description: '增加防御范围和资源上限',
+                        color: '#0088ff'
+                    }
+                };
+                
+                // 阶段2设施
+                this.stage2Facilities = {
+                    nerve: {
+                        name: '神经细胞节点',
+                        icon: '🧠',
+                        cost: { nutrients: 30 },
+                        output: { signals: 0.2 },
+                        description: '产生信号资源',
+                        color: '#8844ff'
+                    },
+                    muscle: {
+                        name: '肌肉纤维',
+                        icon: '💪',
+                        cost: { nutrients: 25, energy: 10 },
+                        output: { energy: 0.5 },
+                        description: '产生能量',
+                        color: '#ff4444'
+                    },
+                    digestive: {
+                        name: '消化腺体',
+                        icon: '🍽️',
+                        cost: { nutrients: 20 },
+                        output: { nutrients: 0.4 },
+                        description: '吸收环境营养',
+                        color: '#44ff44'
+                    }
+                };
+                
+                // 阶段2资源
+                this.stage2Resources = {
+                    signals: 0,
+                    nerveNodes: 0,
+                    muscleFibers: 0,
+                    digestiveGlands: 0
+                };
+                
+                this.stage2Caps = {
+                    signals: 50
+                };
+                
+                // 器官系统
+                this.organs = {
+                    heart: { formed: false, required: { muscle: 3, nerve: 2 } },
+                    brain: { formed: false, required: { nerve: 5, muscle: 2 } },
+                    digestive: { formed: false, required: { digestive: 3, muscle: 2 } }
+                };
+                
+                // 阶段3
+                this.stage3Resources = {
+                    food: 0,
+                    swarmPoints: 0,
+                    territories: 0,
+                    patrols: 0,
+                    breedingPoints: 0
+                };
+                
+                this.stage3Caps = {
                     food: 500,
                     swarmPoints: 1000
                 };
                 
-                // 资源产出速率 (每秒)
-                this.resourceRates = {
-                    nutrients: 0,
-                    energy: 0,
-                    signals: 0,
-                    food: 0,
-                    swarmPoints: 0
-                };
-                
-                // 升级系统
-                this.upgrades = {
-                    metabolism: { level: 0, cost: 10, costType: 'nutrients', effect: 0.5 },
-                    cilia: { level: 0, cost: 25, costType: 'nutrients', effect: 0.2 },
-                    membrane: { level: 0, cost: 50, costType: 'energy', effect: 50 }
-                };
-                
-                // 器官系统 (阶段2)
-                this.organs = {
-                    heart: { formed: false, required: { muscle: 10, nerve: 5 } },
-                    brain: { formed: false, required: { nerve: 15, muscle: 5 } },
-                    digestive: { formed: false, required: { digestive: 10, muscle: 5 } }
-                };
-                
-                // 领地系统 (阶段3)
-                this.territoryData = [
-                    { id: 0, name: '珊瑚礁A', owned: true, contested: false, income: 1 },
-                    { id: 1, name: '珊瑚礁B', owned: false, contested: false, income: 2 },
-                    { id: 2, name: '海草床', owned: false, contested: false, income: 3 },
-                    { id: 3, name: '深海沟', owned: false, contested: true, income: 5 },
-                    { id: 4, name: '热液喷口', owned: false, contested: true, income: 8 },
-                    { id: 5, name: '海底峡谷', owned: false, contested: false, income: 4 }
-                ];
-                
+                this.territoryData = [];
                 this.swarmSize = 1;
-                this.selectedCellType = 'nerve';
-                this.currentTab = 'differentiation';
                 
-                // 游戏对象
+                // 阶段3设施
+                this.stage3Facilities = {
+                    territory: {
+                        name: '标记领地',
+                        icon: '🚩',
+                        cost: { swarmPoints: 50 },
+                        output: { food: 1 },
+                        description: '占领区域，自动产生食物',
+                        color: '#00ff88'
+                    },
+                    patrol: {
+                        name: '部署巡逻队',
+                        icon: '👁️',
+                        cost: { food: 30 },
+                        output: { defense: 1 },
+                        description: '保护领地不被抢夺',
+                        color: '#ffaa00'
+                    },
+                    breeding: {
+                        name: '建立繁殖点',
+                        icon: '🥚',
+                        cost: { food: 50, swarmPoints: 20 },
+                        output: { swarmGrowth: 0.1 },
+                        description: '自动增加鱼群数量',
+                        color: '#ff66aa'
+                    }
+                };
+                
+                // 视觉效果
                 this.particles = [];
-                this.nutrients = [];
-                this.toxins = [];
-                this.fishSchool = [];
                 this.floatingTexts = [];
-                
-                // 自动保存计时器
-                this.lastSave = 0;
-                
-                // 成就系统
-                this.achievements = new Set();
+                this.facilityAnimations = [];
                 
                 this.init();
             }
@@ -916,11 +776,16 @@
                 this.resizeCanvas();
                 window.addEventListener('resize', () => this.resizeCanvas());
                 
-                // 点击收集
-                this.canvas.addEventListener('click', (e) => this.handleCanvasClick(e));
+                // 初始化玩家位置在地图中心
+                this.player.x = this.mapWidth / 2;
+                this.player.y = this.mapHeight / 2;
+                this.updateCamera();
                 
-                // 初始化游戏对象
-                this.initStage1();
+                // 生成生态区域
+                this.generateZones();
+                
+                // 输入控制
+                this.setupControls();
                 
                 // 加载存档
                 this.loadGame();
@@ -930,6 +795,9 @@
                 
                 // 每秒更新
                 setInterval(() => this.secondUpdate(), 1000);
+                
+                // 初始UI更新
+                this.updateUI();
             }
             
             resizeCanvas() {
@@ -938,53 +806,87 @@
                 this.canvas.height = container.clientHeight;
             }
             
-            // ==================== 阶段初始化 ====================
-            initStage1() {
-                // 生成营养颗粒
-                for (let i = 0; i < 5; i++) {
-                    this.spawnNutrient();
+            generateZones() {
+                // 生成营养区
+                for (let i = 0; i < 8; i++) {
+                    this.zones.push({
+                        type: 'nutrient',
+                        x: Math.random() * this.mapWidth,
+                        y: Math.random() * this.mapHeight,
+                        radius: 80 + Math.random() * 60,
+                        color: 'rgba(0, 255, 136, 0.15)'
+                    });
                 }
-                // 生成毒素
-                for (let i = 0; i < 2; i++) {
-                    this.spawnToxin();
-                }
-            }
-            
-            initStage2() {
-                // 继承阶段1的自动化
-                this.upgrades.metabolism.level = Math.max(this.upgrades.metabolism.level, 1);
-                this.upgrades.cilia.level = Math.max(this.upgrades.cilia.level, 1);
-            }
-            
-            initStage3() {
-                // 初始化鱼群
-                this.swarmSize = this.resources.cells;
-                for (let i = 0; i < Math.min(this.swarmSize, 50); i++) {
-                    this.fishSchool.push({
-                        x: Math.random() * this.canvas.width,
-                        y: Math.random() * this.canvas.height,
-                        vx: (Math.random() - 0.5) * 2,
-                        vy: (Math.random() - 0.5) * 2,
-                        size: 8 + Math.random() * 4
+                
+                // 生成危险区
+                for (let i = 0; i < 4; i++) {
+                    this.zones.push({
+                        type: 'danger',
+                        x: Math.random() * this.mapWidth,
+                        y: Math.random() * this.mapHeight,
+                        radius: 60 + Math.random() * 40,
+                        color: 'rgba(255, 85, 85, 0.15)'
                     });
                 }
             }
             
+            setupControls() {
+                // 键盘控制
+                window.addEventListener('keydown', (e) => {
+                    this.keys[e.key.toLowerCase()] = true;
+                });
+                
+                window.addEventListener('keyup', (e) => {
+                    this.keys[e.key.toLowerCase()] = false;
+                });
+                
+                // 触摸控制
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.touchStartX = touch.clientX - rect.left;
+                    this.touchStartY = touch.clientY - rect.top;
+                    this.player.targetX = this.touchStartX + this.camera.x;
+                    this.player.targetY = this.touchStartY + this.camera.y;
+                    this.player.isMoving = true;
+                }, { passive: false });
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.player.targetX = touch.clientX - rect.left + this.camera.x;
+                    this.player.targetY = touch.clientY - rect.top + this.camera.y;
+                }, { passive: false });
+                
+                this.canvas.addEventListener('touchend', () => {
+                    this.player.isMoving = false;
+                    this.player.targetX = null;
+                    this.player.targetY = null;
+                });
+                
+                // 鼠标点击移动
+                this.canvas.addEventListener('mousedown', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.player.targetX = e.clientX - rect.left + this.camera.x;
+                    this.player.targetY = e.clientY - rect.top + this.camera.y;
+                    this.player.isMoving = true;
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    this.player.isMoving = false;
+                    this.player.targetX = null;
+                    this.player.targetY = null;
+                });
+            }
+            
             // ==================== 游戏循环 ====================
             gameLoop(timestamp) {
-                const deltaTime = timestamp - this.lastTime;
+                const deltaTime = (timestamp - this.lastTime) / 1000;
                 this.lastTime = timestamp;
                 
-                // 计算FPS
-                this.frameCount++;
-                if (timestamp - this.lastFpsTime >= 1000) {
-                    this.fps = this.frameCount;
-                    this.frameCount = 0;
-                    this.lastFpsTime = timestamp;
-                    document.getElementById('fpsCounter').textContent = this.fps;
-                }
-                
-                if (!this.paused) {
+                if (!this.paused && deltaTime < 0.1) {
                     this.update(deltaTime);
                     this.render();
                 }
@@ -992,123 +894,193 @@
                 requestAnimationFrame((t) => this.gameLoop(t));
             }
             
-            update(deltaTime) {
-                const dt = deltaTime / 1000;
+            update(dt) {
+                // 更新玩家移动
+                this.updatePlayerMovement(dt);
+                
+                // 更新相机
+                this.updateCamera();
+                
+                // 检测当前区域
+                this.checkCurrentZone();
                 
                 // 更新资源
                 this.updateResources(dt);
                 
+                // 更新设施
+                this.updateFacilities(dt);
+                
                 // 更新粒子
                 this.updateParticles(dt);
-                
-                // 阶段特定更新
-                if (this.stage === 1) {
-                    this.updateStage1(dt);
-                } else if (this.stage === 2) {
-                    this.updateStage2(dt);
-                } else if (this.stage === 3) {
-                    this.updateStage3(dt);
-                }
-                
-                // 更新浮动文字
-                this.updateFloatingTexts(dt);
                 
                 // 检查进化条件
                 this.checkEvolution();
                 
-                // 自动保存
-                if (Date.now() - this.lastSave > 60000) {
-                    this.saveGame();
-                    this.lastSave = Date.now();
+                // 阶段特定更新
+                if (this.stage >= 2) {
+                    this.updateStage2(dt);
+                }
+                if (this.stage >= 3) {
+                    this.updateStage3(dt);
+                }
+            }
+            
+            updatePlayerMovement(dt) {
+                let dx = 0;
+                let dy = 0;
+                
+                // 键盘输入
+                if (this.keys['w'] || this.keys['arrowup']) dy -= 1;
+                if (this.keys['s'] || this.keys['arrowdown']) dy += 1;
+                if (this.keys['a'] || this.keys['arrowleft']) dx -= 1;
+                if (this.keys['d'] || this.keys['arrowright']) dx += 1;
+                
+                // 触摸/鼠标目标移动
+                if (this.player.isMoving && this.player.targetX !== null) {
+                    const targetDx = this.player.targetX - this.player.x;
+                    const targetDy = this.player.targetY - this.player.y;
+                    const dist = Math.sqrt(targetDx * targetDx + targetDy * targetDy);
+                    
+                    if (dist > 5) {
+                        dx = targetDx / dist;
+                        dy = targetDy / dist;
+                    } else {
+                        this.player.isMoving = false;
+                    }
+                }
+                
+                // 应用移动
+                if (dx !== 0 || dy !== 0) {
+                    // 归一化
+                    if (dx !== 0 && dy !== 0) {
+                        const len = Math.sqrt(dx * dx + dy * dy);
+                        dx /= len;
+                        dy /= len;
+                    }
+                    
+                    this.player.x += dx * this.player.speed * dt;
+                    this.player.y += dy * this.player.speed * dt;
+                    
+                    // 边界限制
+                    this.player.x = Math.max(this.player.radius, Math.min(this.mapWidth - this.player.radius, this.player.x));
+                    this.player.y = Math.max(this.player.radius, Math.min(this.mapHeight - this.player.radius, this.player.y));
+                }
+            }
+            
+            updateCamera() {
+                // 相机跟随玩家
+                this.camera.x = this.player.x - this.canvas.width / 2;
+                this.camera.y = this.player.y - this.canvas.height / 2;
+                
+                // 限制相机范围
+                this.camera.x = Math.max(0, Math.min(this.mapWidth - this.canvas.width, this.camera.x));
+                this.camera.y = Math.max(0, Math.min(this.mapHeight - this.canvas.height, this.camera.y));
+            }
+            
+            checkCurrentZone() {
+                let inZone = 'normal';
+                
+                for (const zone of this.zones) {
+                    const dx = this.player.x - zone.x;
+                    const dy = this.player.y - zone.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < zone.radius) {
+                        inZone = zone.type;
+                        break;
+                    }
+                }
+                
+                if (this.currentZone !== inZone) {
+                    this.currentZone = inZone;
+                    this.updateZoneIndicator();
+                    this.updateDeployMenu();
                 }
             }
             
             updateResources(dt) {
-                // 阶段1: 代谢产生能量
-                if (this.stage >= 1) {
-                    const metabolismRate = this.upgrades.metabolism.level * this.upgrades.metabolism.effect;
-                    const ciliaRate = this.upgrades.cilia.level * this.upgrades.cilia.effect;
-                    
-                    // 代谢: 消耗营养产生能量
-                    if (this.resources.nutrients > 0) {
-                        const consumeRate = Math.min(this.resources.nutrients, metabolismRate * dt);
-                        this.resources.nutrients -= consumeRate;
-                        this.resources.energy += consumeRate * 2;
+                // 阶段1资源自然恢复
+                if (this.stage === 1) {
+                    // 普通区域缓慢恢复
+                    if (this.currentZone === 'normal') {
+                        this.resources.nutrients = Math.min(
+                            this.resources.nutrients + 0.1 * dt,
+                            this.resourceCaps.nutrients
+                        );
                     }
-                    
-                    // 纤毛自动收集
-                    if (Math.random() < ciliaRate * dt) {
-                        this.spawnNutrient();
+                    // 营养区额外恢复
+                    if (this.currentZone === 'nutrient') {
+                        this.resources.nutrients = Math.min(
+                            this.resources.nutrients + 0.3 * dt,
+                            this.resourceCaps.nutrients
+                        );
                     }
                 }
                 
-                // 阶段2: 信号产生
+                // 阶段2资源
                 if (this.stage >= 2) {
-                    const signalRate = this.resources.nerveCells * 0.1;
-                    this.resources.signals = Math.min(
-                        this.resources.signals + signalRate * dt,
-                        this.resourceCaps.signals
-                    );
+                    // 信号衰减
+                    this.stage2Resources.signals = Math.max(0, this.stage2Resources.signals - 0.05 * dt);
                 }
                 
-                // 阶段3: 领地收益
+                // 阶段3资源
                 if (this.stage >= 3) {
                     const ownedTerritories = this.territoryData.filter(t => t.owned).length;
-                    const income = ownedTerritories * 2 * dt;
-                    this.resources.food = Math.min(
-                        this.resources.food + income,
-                        this.resourceCaps.food
+                    this.stage3Resources.food = Math.min(
+                        this.stage3Resources.food + ownedTerritories * 0.5 * dt,
+                        this.stage3Caps.food
                     );
                     
-                    // 鱼群协作加成
-                    const swarmBonus = Math.floor(this.swarmSize / 10) * 0.1;
-                    this.resources.swarmPoints += (ownedTerritories * 0.5 * (1 + swarmBonus)) * dt;
+                    const breedingBonus = this.stage3Resources.breedingPoints * 0.1;
+                    this.swarmSize += breedingBonus * dt;
                 }
-                
-                // 应用上限
-                this.applyResourceCaps();
             }
             
-            applyResourceCaps() {
-                for (let key in this.resourceCaps) {
-                    if (this.resources[key] > this.resourceCaps[key]) {
-                        this.resources[key] = this.resourceCaps[key];
+            updateFacilities(dt) {
+                this.facilities.forEach(facility => {
+                    const type = facility.type;
+                    const config = this.getFacilityConfig(type);
+                    
+                    if (config && config.output) {
+                        // 产出资源
+                        for (const [resource, rate] of Object.entries(config.output)) {
+                            if (resource === 'defense') continue;
+                            
+                            const amount = rate * facility.level * dt;
+                            
+                            if (this.stage === 1) {
+                                if (this.resources[resource] !== undefined) {
+                                    this.resources[resource] = Math.min(
+                                        this.resources[resource] + amount,
+                                        this.resourceCaps[resource] || Infinity
+                                    );
+                                }
+                            } else if (this.stage === 2) {
+                                if (resource === 'signals') {
+                                    this.stage2Resources.signals = Math.min(
+                                        this.stage2Resources.signals + amount,
+                                        this.stage2Caps.signals
+                                    );
+                                } else if (this.resources[resource] !== undefined) {
+                                    this.resources[resource] = Math.min(
+                                        this.resources[resource] + amount,
+                                        this.resourceCaps[resource] || Infinity
+                                    );
+                                }
+                            } else if (this.stage === 3) {
+                                if (this.stage3Resources[resource] !== undefined) {
+                                    this.stage3Resources[resource] = Math.min(
+                                        this.stage3Resources[resource] + amount,
+                                        this.stage3Caps[resource] || Infinity
+                                    );
+                                }
+                            }
+                        }
                     }
-                }
-            }
-            
-            updateStage1(dt) {
-                // 营养颗粒移动
-                this.nutrients.forEach(n => {
-                    n.x += n.vx * dt;
-                    n.y += n.vy * dt;
                     
-                    // 边界反弹
-                    if (n.x < 0 || n.x > this.canvas.width) n.vx *= -1;
-                    if (n.y < 0 || n.y > this.canvas.height) n.vy *= -1;
-                    
-                    // 保持在画布内
-                    n.x = Math.max(0, Math.min(this.canvas.width, n.x));
-                    n.y = Math.max(0, Math.min(this.canvas.height, n.y));
+                    // 更新动画
+                    facility.animationTime = (facility.animationTime || 0) + dt;
                 });
-                
-                // 毒素移动
-                this.toxins.forEach(t => {
-                    t.x += t.vx * dt;
-                    t.y += t.vy * dt;
-                    t.angle += t.rotationSpeed * dt;
-                    
-                    if (t.x < 0 || t.x > this.canvas.width) t.vx *= -1;
-                    if (t.y < 0 || t.y > this.canvas.height) t.vy *= -1;
-                    
-                    t.x = Math.max(0, Math.min(this.canvas.width, t.x));
-                    t.y = Math.max(0, Math.min(this.canvas.height, t.y));
-                });
-                
-                // 随机生成新营养
-                if (this.nutrients.length < 10 && Math.random() < 0.02) {
-                    this.spawnNutrient();
-                }
             }
             
             updateStage2(dt) {
@@ -1117,51 +1089,43 @@
             }
             
             updateStage3(dt) {
-                // 更新鱼群
-                const centerX = this.canvas.width / 2;
-                const centerY = this.canvas.height / 2;
+                // 鱼群移动
+                // 简化处理，在渲染时更新
+            }
+            
+            checkOrgans() {
+                let changed = false;
                 
-                this.fishSchool.forEach((fish, i) => {
-                    // 群体行为: 向中心聚集
-                    const dx = centerX - fish.x;
-                    const dy = centerY - fish.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (dist > 100) {
-                        fish.vx += (dx / dist) * 0.1;
-                        fish.vy += (dy / dist) * 0.1;
-                    }
-                    
-                    // 分离: 避免碰撞
-                    this.fishSchool.forEach((other, j) => {
-                        if (i !== j) {
-                            const odx = fish.x - other.x;
-                            const ody = fish.y - other.y;
-                            const odist = Math.sqrt(odx * odx + ody * ody);
-                            if (odist < 30 && odist > 0) {
-                                fish.vx += (odx / odist) * 0.05;
-                                fish.vy += (ody / odist) * 0.05;
-                            }
-                        }
-                    });
-                    
-                    // 限制速度
-                    const speed = Math.sqrt(fish.vx * fish.vx + fish.vy * fish.vy);
-                    if (speed > 3) {
-                        fish.vx = (fish.vx / speed) * 3;
-                        fish.vy = (fish.vy / speed) * 3;
-                    }
-                    
-                    // 更新位置
-                    fish.x += fish.vx;
-                    fish.y += fish.vy;
-                    
-                    // 边界处理
-                    if (fish.x < 0) { fish.x = 0; fish.vx *= -1; }
-                    if (fish.x > this.canvas.width) { fish.x = this.canvas.width; fish.vx *= -1; }
-                    if (fish.y < 0) { fish.y = 0; fish.vy *= -1; }
-                    if (fish.y > this.canvas.height) { fish.y = this.canvas.height; fish.vy *= -1; }
-                });
+                // 检查心脏
+                if (!this.organs.heart.formed &&
+                    this.stage2Resources.muscleFibers >= this.organs.heart.required.muscle &&
+                    this.stage2Resources.nerveNodes >= this.organs.heart.required.nerve) {
+                    this.organs.heart.formed = true;
+                    changed = true;
+                    this.showFloatingText(this.canvas.width / 2, this.canvas.height / 2, '❤️ 心脏形成!', '#ff4444');
+                }
+                
+                // 检查大脑
+                if (!this.organs.brain.formed &&
+                    this.stage2Resources.nerveNodes >= this.organs.brain.required.nerve &&
+                    this.stage2Resources.muscleFibers >= this.organs.brain.required.muscle) {
+                    this.organs.brain.formed = true;
+                    changed = true;
+                    this.showFloatingText(this.canvas.width / 2, this.canvas.height / 2, '🧠 大脑形成!', '#8844ff');
+                }
+                
+                // 检查消化系统
+                if (!this.organs.digestive.formed &&
+                    this.stage2Resources.digestiveGlands >= this.organs.digestive.required.digestive &&
+                    this.stage2Resources.muscleFibers >= this.organs.digestive.required.muscle) {
+                    this.organs.digestive.formed = true;
+                    changed = true;
+                    this.showFloatingText(this.canvas.width / 2, this.canvas.height / 2, '🍽️ 消化系统形成!', '#44ff44');
+                }
+                
+                if (changed) {
+                    this.updateOrganHint();
+                }
             }
             
             updateParticles(dt) {
@@ -1174,73 +1138,186 @@
                 });
             }
             
-            updateFloatingTexts(dt) {
-                this.floatingTexts = this.floatingTexts.filter(t => {
-                    t.y -= 30 * dt;
-                    t.life -= dt;
-                    t.element.style.opacity = t.life;
-                    t.element.style.transform = `translateY(${t.y - t.startY}px) scale(${1 + (1 - t.life) * 0.5})`;
-                    if (t.life <= 0) {
-                        t.element.remove();
-                        return false;
-                    }
-                    return true;
-                });
-            }
-            
             // ==================== 渲染 ====================
             render() {
                 // 清空画布
-                this.ctx.fillStyle = 'rgba(10, 22, 40, 0.3)';
+                this.ctx.fillStyle = '#0a1628';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                if (this.stage === 1) {
-                    this.renderStage1();
-                } else if (this.stage === 2) {
-                    this.renderStage2();
-                } else if (this.stage === 3) {
-                    this.renderStage3();
-                }
+                this.ctx.save();
+                
+                // 应用相机变换
+                this.ctx.translate(-this.camera.x, -this.camera.y);
+                
+                // 渲染地图背景
+                this.renderMapBackground();
+                
+                // 渲染生态区域
+                this.renderZones();
+                
+                // 渲染设施
+                this.renderFacilities();
+                
+                // 渲染玩家
+                this.renderPlayer();
                 
                 // 渲染粒子
                 this.renderParticles();
+                
+                this.ctx.restore();
             }
             
-            renderStage1() {
-                // 渲染细胞
-                const cellX = this.canvas.width / 2;
-                const cellY = this.canvas.height / 2;
-                const cellSize = 30 + this.resources.cells * 2;
+            renderMapBackground() {
+                // 网格背景
+                this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                this.ctx.lineWidth = 1;
                 
-                // 细胞光晕
-                const gradient = this.ctx.createRadialGradient(cellX, cellY, 0, cellX, cellY, cellSize * 2);
-                gradient.addColorStop(0, 'rgba(0, 255, 200, 0.3)');
-                gradient.addColorStop(1, 'rgba(0, 255, 200, 0)');
+                const gridSize = 50;
+                for (let x = 0; x <= this.mapWidth; x += gridSize) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, this.mapHeight);
+                    this.ctx.stroke();
+                }
+                for (let y = 0; y <= this.mapHeight; y += gridSize) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.mapWidth, y);
+                    this.ctx.stroke();
+                }
+                
+                // 地图边界
+                this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.2)';
+                this.ctx.lineWidth = 3;
+                this.ctx.strokeRect(0, 0, this.mapWidth, this.mapHeight);
+            }
+            
+            renderZones() {
+                this.zones.forEach(zone => {
+                    // 区域光晕
+                    const gradient = this.ctx.createRadialGradient(
+                        zone.x, zone.y, 0,
+                        zone.x, zone.y, zone.radius
+                    );
+                    gradient.addColorStop(0, zone.color);
+                    gradient.addColorStop(1, 'transparent');
+                    
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.beginPath();
+                    this.ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // 区域边界
+                    this.ctx.strokeStyle = zone.color.replace('0.15', '0.4');
+                    this.ctx.lineWidth = 2;
+                    this.ctx.setLineDash([10, 10]);
+                    this.ctx.beginPath();
+                    this.ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                    this.ctx.setLineDash([]);
+                    
+                    // 区域图标
+                    this.ctx.font = '24px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    const icon = zone.type === 'nutrient' ? '🌿' : '☠️';
+                    this.ctx.fillText(icon, zone.x, zone.y);
+                });
+            }
+            
+            renderFacilities() {
+                this.facilities.forEach(facility => {
+                    const config = this.getFacilityConfig(facility.type);
+                    if (!config) return;
+                    
+                    const x = facility.x;
+                    const y = facility.y;
+                    const size = 25;
+                    
+                    // 设施光晕
+                    const pulse = Math.sin((facility.animationTime || 0) * 3) * 0.2 + 0.8;
+                    const gradient = this.ctx.createRadialGradient(
+                        x, y, 0,
+                        x, y, size * 2 * pulse
+                    );
+                    gradient.addColorStop(0, config.color + '60');
+                    gradient.addColorStop(1, 'transparent');
+                    
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size * 2 * pulse, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // 设施底座
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    // 设施边框
+                    this.ctx.strokeStyle = config.color;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size, 0, Math.PI * 2);
+                    this.ctx.stroke();
+                    
+                    // 设施图标
+                    this.ctx.font = '20px Arial';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(config.icon, x, y);
+                    
+                    // 等级标记
+                    if (facility.level > 1) {
+                        this.ctx.fillStyle = config.color;
+                        this.ctx.font = 'bold 12px Arial';
+                        this.ctx.fillText('Lv.' + facility.level, x, y + size + 15);
+                    }
+                });
+            }
+            
+            renderPlayer() {
+                const x = this.player.x;
+                const y = this.player.y;
+                const r = this.player.radius;
+                
+                // 玩家光晕
+                const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+                gradient.addColorStop(0, 'rgba(0, 255, 255, 0.3)');
+                gradient.addColorStop(1, 'transparent');
+                
                 this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // 细胞主体
                 this.ctx.beginPath();
-                this.ctx.arc(cellX, cellY, cellSize, 0, Math.PI * 2);
-                this.ctx.fillStyle = 'rgba(0, 200, 180, 0.8)';
+                this.ctx.arc(x, y, r * 3, 0, Math.PI * 2);
                 this.ctx.fill();
+                
+                // 玩家主体
+                this.ctx.fillStyle = 'rgba(0, 200, 200, 0.8)';
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, r, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // 玩家边框
                 this.ctx.strokeStyle = '#00ffff';
                 this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, r, 0, Math.PI * 2);
                 this.ctx.stroke();
                 
                 // 细胞核
-                this.ctx.beginPath();
-                this.ctx.arc(cellX, cellY, cellSize * 0.3, 0, Math.PI * 2);
                 this.ctx.fillStyle = 'rgba(0, 100, 150, 0.9)';
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, r * 0.4, 0, Math.PI * 2);
                 this.ctx.fill();
                 
-                // 纤毛
-                for (let i = 0; i < 12; i++) {
-                    const angle = (Date.now() / 1000 + i * Math.PI / 6) % (Math.PI * 2);
-                    const x1 = cellX + Math.cos(angle) * cellSize;
-                    const y1 = cellY + Math.sin(angle) * cellSize;
-                    const x2 = cellX + Math.cos(angle) * (cellSize + 10);
-                    const y2 = cellY + Math.sin(angle) * (cellSize + 10);
+                // 纤毛动画
+                const time = Date.now() / 1000;
+                for (let i = 0; i < 8; i++) {
+                    const angle = time + (i * Math.PI * 2 / 8);
+                    const x1 = x + Math.cos(angle) * r;
+                    const y1 = y + Math.sin(angle) * r;
+                    const x2 = x + Math.cos(angle) * (r + 8);
+                    const y2 = y + Math.sin(angle) * (r + 8);
                     
                     this.ctx.beginPath();
                     this.ctx.moveTo(x1, y1);
@@ -1248,213 +1325,6 @@
                     this.ctx.strokeStyle = 'rgba(0, 255, 200, 0.6)';
                     this.ctx.lineWidth = 2;
                     this.ctx.stroke();
-                }
-                
-                // 渲染营养颗粒
-                this.nutrients.forEach(n => {
-                    this.ctx.beginPath();
-                    this.ctx.arc(n.x, n.y, n.size, 0, Math.PI * 2);
-                    this.ctx.fillStyle = '#00ff88';
-                    this.ctx.fill();
-                    this.ctx.shadowBlur = 10;
-                    this.ctx.shadowColor = '#00ff88';
-                });
-                this.ctx.shadowBlur = 0;
-                
-                // 渲染毒素
-                this.toxins.forEach(t => {
-                    this.ctx.save();
-                    this.ctx.translate(t.x, t.y);
-                    this.ctx.rotate(t.angle);
-                    
-                    this.ctx.beginPath();
-                    for (let i = 0; i < 5; i++) {
-                        const angle = (i * Math.PI * 2) / 5;
-                        const r = i % 2 === 0 ? t.size : t.size * 0.5;
-                        const x = Math.cos(angle) * r;
-                        const y = Math.sin(angle) * r;
-                        if (i === 0) this.ctx.moveTo(x, y);
-                        else this.ctx.lineTo(x, y);
-                    }
-                    this.ctx.closePath();
-                    this.ctx.fillStyle = '#ff4444';
-                    this.ctx.fill();
-                    this.ctx.strokeStyle = '#ff6666';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.stroke();
-                    
-                    this.ctx.restore();
-                });
-            }
-            
-            renderStage2() {
-                // 渲染多细胞组织
-                const centerX = this.canvas.width / 2;
-                const centerY = this.canvas.height / 2;
-                
-                // 渲染所有细胞
-                const totalCells = this.resources.nerveCells + this.resources.muscleCells + this.resources.digestiveCells + 1;
-                const cellRadius = 100 + Math.sqrt(totalCells) * 10;
-                
-                // 神经细胞 (紫色)
-                for (let i = 0; i < this.resources.nerveCells; i++) {
-                    const angle = (i / Math.max(1, this.resources.nerveCells)) * Math.PI * 2 + Date.now() / 5000;
-                    const r = cellRadius * (0.7 + Math.sin(angle * 3) * 0.1);
-                    const x = centerX + Math.cos(angle) * r;
-                    const y = centerY + Math.sin(angle) * r;
-                    this.renderCell(x, y, 8, '#8844ff', '#aa66ff');
-                }
-                
-                // 肌肉细胞 (红色)
-                for (let i = 0; i < this.resources.muscleCells; i++) {
-                    const angle = (i / Math.max(1, this.resources.muscleCells)) * Math.PI * 2 + Date.now() / 4000 + Math.PI / 3;
-                    const r = cellRadius * (0.8 + Math.cos(angle * 2) * 0.15);
-                    const x = centerX + Math.cos(angle) * r;
-                    const y = centerY + Math.sin(angle) * r;
-                    this.renderCell(x, y, 10, '#ff4444', '#ff6666');
-                }
-                
-                // 消化细胞 (绿色)
-                for (let i = 0; i < this.resources.digestiveCells; i++) {
-                    const angle = (i / Math.max(1, this.resources.digestiveCells)) * Math.PI * 2 + Date.now() / 6000 + Math.PI * 2 / 3;
-                    const r = cellRadius * (0.6 + Math.sin(angle * 4) * 0.1);
-                    const x = centerX + Math.cos(angle) * r;
-                    const y = centerY + Math.sin(angle) * r;
-                    this.renderCell(x, y, 9, '#44ff44', '#66ff66');
-                }
-                
-                // 中心干细胞
-                this.renderCell(centerX, centerY, 20, '#00ffff', '#00cccc');
-                
-                // 器官渲染
-                if (this.organs.heart.formed) {
-                    this.renderOrgan(centerX - 60, centerY - 60, '❤️', '#ff4444');
-                }
-                if (this.organs.brain.formed) {
-                    this.renderOrgan(centerX + 60, centerY - 60, '🧠', '#8844ff');
-                }
-                if (this.organs.digestive.formed) {
-                    this.renderOrgan(centerX, centerY + 80, '🍽️', '#44ff44');
-                }
-            }
-            
-            renderCell(x, y, size, color, glowColor) {
-                // 光晕
-                const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, size * 2);
-                gradient.addColorStop(0, glowColor + '40');
-                gradient.addColorStop(1, glowColor + '00');
-                this.ctx.fillStyle = gradient;
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, size * 2, 0, Math.PI * 2);
-                this.ctx.fill();
-                
-                // 细胞体
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, size, 0, Math.PI * 2);
-                this.ctx.fillStyle = color + 'cc';
-                this.ctx.fill();
-                this.ctx.strokeStyle = color;
-                this.ctx.lineWidth = 1;
-                this.ctx.stroke();
-            }
-            
-            renderOrgan(x, y, emoji, color) {
-                this.ctx.font = '30px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.textBaseline = 'middle';
-                this.ctx.fillText(emoji, x, y);
-                
-                // 光晕
-                const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, 40);
-                gradient.addColorStop(0, color + '60');
-                gradient.addColorStop(1, color + '00');
-                this.ctx.fillStyle = gradient;
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, 40, 0, Math.PI * 2);
-                this.ctx.fill();
-            }
-            
-            renderStage3() {
-                // 渲染深海背景
-                const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                gradient.addColorStop(0, 'rgba(0, 50, 100, 0.3)');
-                gradient.addColorStop(1, 'rgba(0, 20, 60, 0.5)');
-                this.ctx.fillStyle = gradient;
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // 渲染领地
-                this.territoryData.forEach((t, i) => {
-                    if (t.owned) {
-                        const angle = (i / 6) * Math.PI * 2;
-                        const r = 150;
-                        const x = this.canvas.width / 2 + Math.cos(angle) * r;
-                        const y = this.canvas.height / 2 + Math.sin(angle) * r;
-                        
-                        // 领地光环
-                        const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, 60);
-                        gradient.addColorStop(0, 'rgba(0, 255, 136, 0.3)');
-                        gradient.addColorStop(1, 'rgba(0, 255, 136, 0)');
-                        this.ctx.fillStyle = gradient;
-                        this.ctx.beginPath();
-                        this.ctx.arc(x, y, 60, 0, Math.PI * 2);
-                        this.ctx.fill();
-                        
-                        // 领地图标
-                        this.ctx.font = '24px Arial';
-                        this.ctx.textAlign = 'center';
-                        this.ctx.textBaseline = 'middle';
-                        this.ctx.fillText('🪸', x, y);
-                    }
-                });
-                
-                // 渲染鱼群
-                this.fishSchool.forEach(fish => {
-                    const angle = Math.atan2(fish.vy, fish.vx);
-                    
-                    this.ctx.save();
-                    this.ctx.translate(fish.x, fish.y);
-                    this.ctx.rotate(angle);
-                    
-                    // 鱼身
-                    this.ctx.beginPath();
-                    this.ctx.ellipse(0, 0, fish.size, fish.size * 0.4, 0, 0, Math.PI * 2);
-                    this.ctx.fillStyle = '#00aaff';
-                    this.ctx.fill();
-                    
-                    // 鱼尾
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(-fish.size + 2, 0);
-                    this.ctx.lineTo(-fish.size - 8, -5);
-                    this.ctx.lineTo(-fish.size - 8, 5);
-                    this.ctx.closePath();
-                    this.ctx.fillStyle = '#0088cc';
-                    this.ctx.fill();
-                    
-                    // 鱼眼
-                    this.ctx.beginPath();
-                    this.ctx.arc(fish.size * 0.5, -2, 2, 0, Math.PI * 2);
-                    this.ctx.fillStyle = '#fff';
-                    this.ctx.fill();
-                    this.ctx.beginPath();
-                    this.ctx.arc(fish.size * 0.5, -2, 1, 0, Math.PI * 2);
-                    this.ctx.fillStyle = '#000';
-                    this.ctx.fill();
-                    
-                    this.ctx.restore();
-                });
-                
-                // 群体中心标记
-                if (this.fishSchool.length > 0) {
-                    const centerX = this.fishSchool.reduce((sum, f) => sum + f.x, 0) / this.fishSchool.length;
-                    const centerY = this.fishSchool.reduce((sum, f) => sum + f.y, 0) / this.fishSchool.length;
-                    
-                    this.ctx.beginPath();
-                    this.ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
-                    this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.setLineDash([5, 5]);
-                    this.ctx.stroke();
-                    this.ctx.setLineDash([]);
                 }
             }
             
@@ -1469,139 +1339,467 @@
                 this.ctx.globalAlpha = 1;
             }
             
-            // ==================== 交互处理 ====================
-            handleCanvasClick(e) {
-                const rect = this.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+            // ==================== 设施管理 ====================
+            deployFacility(type) {
+                const config = this.getFacilityConfig(type);
+                if (!config) return;
                 
-                if (this.stage === 1) {
-                    this.handleStage1Click(x, y);
-                } else if (this.stage === 2) {
-                    this.handleStage2Click(x, y);
-                } else if (this.stage === 3) {
-                    this.handleStage3Click(x, y);
-                }
-            }
-            
-            handleStage1Click(x, y) {
-                const cellX = this.canvas.width / 2;
-                const cellY = this.canvas.height / 2;
-                const cellSize = 30 + this.resources.cells * 2;
+                // 检查设施数量上限
+                const maxFacilities = this.stage === 1 ? this.resources.cells : 
+                                     this.stage === 2 ? (this.resources.cells + this.stage2Resources.nerveNodes + this.stage2Resources.muscleFibers + this.stage2Resources.digestiveGlands) :
+                                     Math.floor(this.swarmSize);
                 
-                // 检查是否点击了细胞 (分裂)
-                const distToCell = Math.sqrt((x - cellX) ** 2 + (y - cellY) ** 2);
-                if (distToCell < cellSize && this.resources.energy >= 50) {
-                    this.cellDivision();
+                if (this.facilities.length >= maxFacilities) {
+                    this.showFloatingText(this.canvas.width / 2, this.canvas.height / 2, '设施数量已达上限!', '#ff5555');
                     return;
                 }
                 
-                // 检查是否点击了营养
-                for (let i = this.nutrients.length - 1; i >= 0; i--) {
-                    const n = this.nutrients[i];
-                    const dist = Math.sqrt((x - n.x) ** 2 + (y - n.y) ** 2);
-                    if (dist < n.size + 10) {
-                        this.collectNutrient(i, x, y);
-                        return;
+                // 检查资源
+                let canAfford = true;
+                for (const [resource, cost] of Object.entries(config.cost)) {
+                    let current = 0;
+                    if (this.stage === 1) {
+                        current = this.resources[resource] || 0;
+                    } else if (this.stage === 2) {
+                        current = this.resources[resource] || this.stage2Resources[resource] || 0;
+                    } else if (this.stage === 3) {
+                        current = this.stage3Resources[resource] || 0;
+                    }
+                    if (current < cost) {
+                        canAfford = false;
+                        break;
                     }
                 }
                 
-                // 点击空白处产生波纹效果
-                this.spawnParticles(x, y, 5, '#00ffff');
-            }
-            
-            handleStage2Click(x, y) {
-                // 点击产生信号
-                this.resources.signals = Math.min(this.resources.signals + 1, this.resourceCaps.signals);
-                this.spawnParticles(x, y, 3, '#8844ff');
-                this.showFloatingText(x, y, '+1 信号', '#8844ff');
-            }
-            
-            handleStage3Click(x, y) {
-                // 点击吸引鱼群
-                this.fishSchool.forEach(fish => {
-                    const dx = x - fish.x;
-                    const dy = y - fish.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist > 0) {
-                        fish.vx += (dx / dist) * 2;
-                        fish.vy += (dy / dist) * 2;
+                if (!canAfford) {
+                    this.showFloatingText(this.canvas.width / 2, this.canvas.height / 2, '资源不足!', '#ff5555');
+                    return;
+                }
+                
+                // 扣除资源
+                for (const [resource, cost] of Object.entries(config.cost)) {
+                    if (this.stage === 1) {
+                        this.resources[resource] -= cost;
+                    } else if (this.stage === 2) {
+                        if (this.resources[resource] !== undefined) {
+                            this.resources[resource] -= cost;
+                        }
+                    } else if (this.stage === 3) {
+                        this.stage3Resources[resource] -= cost;
                     }
-                });
+                }
                 
-                this.spawnParticles(x, y, 8, '#00aaff');
-                this.resources.swarmPoints += 0.5;
-            }
-            
-            // ==================== 游戏逻辑 ====================
-            spawnNutrient() {
-                this.nutrients.push({
-                    x: Math.random() * this.canvas.width,
-                    y: Math.random() * this.canvas.height,
-                    vx: (Math.random() - 0.5) * 30,
-                    vy: (Math.random() - 0.5) * 30,
-                    size: 5 + Math.random() * 5,
-                    value: 1 + Math.floor(Math.random() * 3)
-                });
-            }
-            
-            spawnToxin() {
-                this.toxins.push({
-                    x: Math.random() * this.canvas.width,
-                    y: Math.random() * this.canvas.height,
-                    vx: (Math.random() - 0.5) * 20,
-                    vy: (Math.random() - 0.5) * 20,
-                    size: 12,
-                    angle: 0,
-                    rotationSpeed: (Math.random() - 0.5) * 2
-                });
-            }
-            
-            collectNutrient(index, clickX, clickY) {
-                const n = this.nutrients[index];
-                const value = n.value;
+                // 创建设施
+                const facility = {
+                    id: Date.now() + Math.random(),
+                    type: type,
+                    x: this.player.x,
+                    y: this.player.y,
+                    level: 1,
+                    animationTime: 0
+                };
                 
-                this.resources.nutrients = Math.min(
-                    this.resources.nutrients + value,
-                    this.resourceCaps.nutrients
-                );
+                this.facilities.push(facility);
                 
-                this.nutrients.splice(index, 1);
+                // 阶段2特殊处理
+                if (this.stage === 2) {
+                    if (type === 'nerve') this.stage2Resources.nerveNodes++;
+                    if (type === 'muscle') this.stage2Resources.muscleFibers++;
+                    if (type === 'digestive') this.stage2Resources.digestiveGlands++;
+                }
+                
+                // 阶段3特殊处理
+                if (this.stage === 3) {
+                    if (type === 'territory') {
+                        this.territoryData.push({
+                            x: this.player.x,
+                            y: this.player.y,
+                            owned: true
+                        });
+                        this.stage3Resources.territories++;
+                    }
+                    if (type === 'patrol') this.stage3Resources.patrols++;
+                    if (type === 'breeding') this.stage3Resources.breedingPoints++;
+                }
                 
                 // 视觉效果
-                this.spawnParticles(clickX, clickY, 5, '#00ff88');
-                this.showFloatingText(clickX, clickY, `+${value} 营养`, '#00ff88');
+                this.spawnParticles(this.player.x, this.player.y, 10, config.color);
+                this.showFloatingText(this.player.x - this.camera.x, this.player.y - this.camera.y, `+${config.name}`, config.color);
                 
-                // 成就检查
-                if (this.resources.nutrients >= 50 && !this.achievements.has('collector')) {
-                    this.unlockAchievement('collector', '营养收集者', '收集50点营养');
-                }
+                this.updateUI();
             }
             
-            cellDivision() {
-                if (this.resources.energy >= 50) {
-                    this.resources.energy -= 50;
-                    this.resources.cells++;
-                    this.resourceCaps.energy += 20;
-                    this.resourceCaps.nutrients += 30;
-                    
-                    const cellX = this.canvas.width / 2;
-                    const cellY = this.canvas.height / 2;
-                    
-                    this.spawnParticles(cellX, cellY, 20, '#00ffff');
-                    this.showFloatingText(cellX, cellY, '细胞分裂!', '#00ffff');
-                    
-                    // 成就检查
-                    if (this.resources.cells >= 10 && !this.achievements.has('multiplier')) {
-                        this.unlockAchievement('multiplier', '细胞倍增', '拥有10个细胞');
+            upgradeFacility(id) {
+                const facility = this.facilities.find(f => f.id === id);
+                if (!facility) return;
+                
+                const config = this.getFacilityConfig(facility.type);
+                const upgradeCost = Math.floor(Object.values(config.cost)[0] * Math.pow(1.5, facility.level - 1));
+                const costType = Object.keys(config.cost)[0];
+                
+                let currentResource = 0;
+                if (this.stage === 1) {
+                    currentResource = this.resources[costType] || 0;
+                } else if (this.stage === 2) {
+                    currentResource = this.resources[costType] || 0;
+                } else if (this.stage === 3) {
+                    currentResource = this.stage3Resources[costType] || 0;
+                }
+                
+                if (currentResource >= upgradeCost) {
+                    if (this.stage === 1) {
+                        this.resources[costType] -= upgradeCost;
+                    } else if (this.stage === 2) {
+                        this.resources[costType] -= upgradeCost;
+                    } else if (this.stage === 3) {
+                        this.stage3Resources[costType] -= upgradeCost;
                     }
+                    
+                    facility.level++;
+                    this.spawnParticles(facility.x, facility.y, 8, '#ffff00');
+                    this.updateUI();
                 }
             }
             
+            removeFacility(id) {
+                const index = this.facilities.findIndex(f => f.id === id);
+                if (index === -1) return;
+                
+                const facility = this.facilities[index];
+                
+                // 阶段2特殊处理
+                if (this.stage === 2) {
+                    if (facility.type === 'nerve') this.stage2Resources.nerveNodes--;
+                    if (facility.type === 'muscle') this.stage2Resources.muscleFibers--;
+                    if (facility.type === 'digestive') this.stage2Resources.digestiveGlands--;
+                }
+                
+                // 阶段3特殊处理
+                if (this.stage === 3) {
+                    if (facility.type === 'territory') {
+                        this.territoryData = this.territoryData.filter(t => 
+                            Math.abs(t.x - facility.x) > 10 || Math.abs(t.y - facility.y) > 10
+                        );
+                        this.stage3Resources.territories--;
+                    }
+                    if (facility.type === 'patrol') this.stage3Resources.patrols--;
+                    if (facility.type === 'breeding') this.stage3Resources.breedingPoints--;
+                }
+                
+                this.spawnParticles(facility.x, facility.y, 5, '#ff5555');
+                this.facilities.splice(index, 1);
+                this.updateUI();
+            }
+            
+            getFacilityConfig(type) {
+                if (this.stage === 1) {
+                    return this.facilityTypes[type];
+                } else if (this.stage === 2) {
+                    return this.stage2Facilities[type];
+                } else if (this.stage === 3) {
+                    return this.stage3Facilities[type];
+                }
+                return null;
+            }
+            
+            getAvailableFacilities() {
+                if (this.currentZone === 'danger') return [];
+                
+                if (this.stage === 1) {
+                    return this.currentZone === 'nutrient' ? ['cilia', 'metabolism', 'membrane'] : [];
+                } else if (this.stage === 2) {
+                    return ['nerve', 'muscle', 'digestive'];
+                } else if (this.stage === 3) {
+                    return ['territory', 'patrol', 'breeding'];
+                }
+                return [];
+            }
+            
+            // ==================== 进化系统 ====================
+            checkEvolution() {
+                let progress = 0;
+                let canEvolve = false;
+                
+                if (this.stage === 1) {
+                    const energyProgress = Math.min(this.resources.energy / 100, 1);
+                    const cellProgress = Math.min(this.resources.cells / 5, 1);
+                    progress = (energyProgress + cellProgress) / 2 * 100;
+                    canEvolve = this.resources.energy >= 100 && this.resources.cells >= 5;
+                } else if (this.stage === 2) {
+                    const organsFormed = Object.values(this.organs).filter(o => o.formed).length;
+                    const organProgress = organsFormed / 3;
+                    const signalProgress = Math.min(this.stage2Resources.signals / 30, 1);
+                    progress = (organProgress + signalProgress) / 2 * 100;
+                    canEvolve = organsFormed >= 2 && this.stage2Resources.signals >= 30;
+                } else if (this.stage === 3) {
+                    const territoryProgress = Math.min(this.stage3Resources.territories / 3, 1);
+                    const swarmProgress = Math.min(this.swarmSize / 30, 1);
+                    progress = (territoryProgress + swarmProgress) / 2 * 100;
+                    canEvolve = this.stage3Resources.territories >= 3 && this.swarmSize >= 30;
+                }
+                
+                document.getElementById('evolutionFill').style.width = progress + '%';
+                document.getElementById('evolutionPercent').textContent = Math.floor(progress) + '%';
+                
+                const evolveBtn = document.getElementById('evolveBtn');
+                if (canEvolve) {
+                    evolveBtn.classList.add('active');
+                } else {
+                    evolveBtn.classList.remove('active');
+                }
+            }
+            
+            attemptEvolution() {
+                let canEvolve = false;
+                
+                if (this.stage === 1) {
+                    canEvolve = this.resources.energy >= 100 && this.resources.cells >= 5;
+                } else if (this.stage === 2) {
+                    const organsFormed = Object.values(this.organs).filter(o => o.formed).length;
+                    canEvolve = organsFormed >= 2 && this.stage2Resources.signals >= 30;
+                } else if (this.stage === 3) {
+                    canEvolve = this.stage3Resources.territories >= 3 && this.swarmSize >= 30;
+                }
+                
+                if (canEvolve) {
+                    this.evolve();
+                }
+            }
+            
+            evolve() {
+                this.stage++;
+                
+                // 清理旧设施
+                this.facilities = [];
+                
+                if (this.stage === 2) {
+                    // 阶段2初始化
+                    this.resources.cells = Math.max(1, this.resources.cells);
+                    this.showFloatingText(this.canvas.width / 2, this.canvas.height / 2, '🧬 进入多细胞阶段!', '#8844ff');
+                } else if (this.stage === 3) {
+                    // 阶段3初始化
+                    this.swarmSize = this.resources.cells + this.stage2Resources.nerveNodes + this.stage2Resources.muscleFibers + this.stage2Resources.digestiveGlands;
+                    this.showFloatingText(this.canvas.width / 2, this.canvas.height / 2, '🐟 进入海洋生物阶段!', '#00aaff');
+                } else if (this.stage === 4) {
+                    alert('🎉 恭喜！你已完成所有阶段！');
+                    this.stage = 3;
+                    return;
+                }
+                
+                this.updateStageUI();
+                this.updateUI();
+                this.saveGame();
+            }
+            
+            // ==================== UI更新 ====================
+            secondUpdate() {
+                this.playTime++;
+                this.updateUI();
+            }
+            
+            updateUI() {
+                this.updateResourcesBar();
+                this.updateFacilityList();
+                this.updateDeployMenu();
+            }
+            
+            updateStageUI() {
+                const stageNames = {
+                    1: '阶段1: 单细胞',
+                    2: '阶段2: 多细胞',
+                    3: '阶段3: 海洋生物'
+                };
+                document.getElementById('stageBadge').textContent = stageNames[this.stage] || '未知阶段';
+                
+                // 更新器官提示显示
+                document.getElementById('organHint').style.display = this.stage === 2 ? 'block' : 'none';
+                if (this.stage === 2) {
+                    this.updateOrganHint();
+                }
+            }
+            
+            updateOrganHint() {
+                const organList = document.getElementById('organList');
+                let html = '';
+                
+                if (this.organs.heart.formed) {
+                    html += '<span class="organ-tag formed">❤️ 心脏</span>';
+                } else {
+                    html += `<span class="organ-tag">❤️ 心脏 (${this.stage2Resources.muscleFibers}/${this.organs.heart.required.muscle}肌肉, ${this.stage2Resources.nerveNodes}/${this.organs.heart.required.nerve}神经)</span>`;
+                }
+                
+                if (this.organs.brain.formed) {
+                    html += '<span class="organ-tag formed">🧠 大脑</span>';
+                } else {
+                    html += `<span class="organ-tag">🧠 大脑 (${this.stage2Resources.nerveNodes}/${this.organs.brain.required.nerve}神经, ${this.stage2Resources.muscleFibers}/${this.organs.brain.required.muscle}肌肉)</span>`;
+                }
+                
+                if (this.organs.digestive.formed) {
+                    html += '<span class="organ-tag formed">🍽️ 消化系统</span>';
+                } else {
+                    html += `<span class="organ-tag">🍽️ 消化 (${this.stage2Resources.digestiveGlands}/${this.organs.digestive.required.digestive}腺体, ${this.stage2Resources.muscleFibers}/${this.organs.digestive.required.muscle}肌肉)</span>`;
+                }
+                
+                organList.innerHTML = html;
+            }
+            
+            updateResourcesBar() {
+                const bar = document.getElementById('resourcesBar');
+                let html = '';
+                
+                if (this.stage === 1) {
+                    html += `<div class="resource-mini">🍃 <span class="value">${Math.floor(this.resources.nutrients)}</span></div>`;
+                    html += `<div class="resource-mini">⚡ <span class="value">${Math.floor(this.resources.energy)}</span></div>`;
+                    html += `<div class="resource-mini">🔬 <span class="value">${this.resources.cells}</span></div>`;
+                } else if (this.stage === 2) {
+                    html += `<div class="resource-mini">🍃 <span class="value">${Math.floor(this.resources.nutrients)}</span></div>`;
+                    html += `<div class="resource-mini">⚡ <span class="value">${Math.floor(this.resources.energy)}</span></div>`;
+                    html += `<div class="resource-mini">📡 <span class="value">${Math.floor(this.stage2Resources.signals)}</span></div>`;
+                } else if (this.stage === 3) {
+                    html += `<div class="resource-mini">🐟 <span class="value">${Math.floor(this.stage3Resources.food)}</span></div>`;
+                    html += `<div class="resource-mini">🌊 <span class="value">${Math.floor(this.stage3Resources.swarmPoints)}</span></div>`;
+                    html += `<div class="resource-mini">👥 <span class="value">${Math.floor(this.swarmSize)}</span></div>`;
+                }
+                
+                bar.innerHTML = html;
+                
+                // 移动端资源条
+                document.getElementById('mobileResources').innerHTML = html;
+            }
+            
+            updateFacilityList() {
+                const list = document.getElementById('facilityList');
+                const maxFacilities = this.stage === 1 ? this.resources.cells : 
+                                     this.stage === 2 ? (this.resources.cells + this.stage2Resources.nerveNodes + this.stage2Resources.muscleFibers + this.stage2Resources.digestiveGlands) :
+                                     Math.floor(this.swarmSize);
+                
+                document.getElementById('facilityCount').textContent = this.facilities.length;
+                document.getElementById('maxFacilityCount').textContent = maxFacilities;
+                
+                let html = '';
+                
+                if (this.facilities.length === 0) {
+                    html = '<div style="text-align: center; color: rgba(255,255,255,0.4); padding: 30px;">暂无设施<br>移动到营养区部署</div>';
+                } else {
+                    this.facilities.forEach(facility => {
+                        const config = this.getFacilityConfig(facility.type);
+                        if (!config) return;
+                        
+                        // 计算升级成本
+                        const upgradeCost = Math.floor(Object.values(config.cost)[0] * Math.pow(1.5, facility.level - 1));
+                        const costType = Object.keys(config.cost)[0];
+                        
+                        let currentResource = 0;
+                        if (this.stage === 1) {
+                            currentResource = this.resources[costType] || 0;
+                        } else if (this.stage === 2) {
+                            currentResource = this.resources[costType] || 0;
+                        } else if (this.stage === 3) {
+                            currentResource = this.stage3Resources[costType] || 0;
+                        }
+                        
+                        const canUpgrade = currentResource >= upgradeCost;
+                        
+                        html += `
+                            <div class="facility-item">
+                                <div class="facility-header">
+                                    <div class="facility-name">
+                                        <span>${config.icon}</span>
+                                        <span>${config.name}</span>
+                                    </div>
+                                    <span class="facility-level">Lv.${facility.level}</span>
+                                </div>
+                                <div class="facility-output">${config.description}</div>
+                                <div class="facility-actions">
+                                    <button class="facility-btn btn-upgrade" ${canUpgrade ? '' : 'disabled'} 
+                                            onclick="game.upgradeFacility(${facility.id})">
+                                        升级 (${upgradeCost})
+                                    </button>
+                                    <button class="facility-btn btn-remove" onclick="game.removeFacility(${facility.id})">
+                                        拆除
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                list.innerHTML = html;
+            }
+            
+            updateDeployMenu() {
+                const menu = document.getElementById('deployMenu');
+                const options = document.getElementById('deployOptions');
+                
+                const available = this.getAvailableFacilities();
+                
+                if (available.length === 0) {
+                    menu.classList.remove('visible');
+                    return;
+                }
+                
+                menu.classList.add('visible');
+                
+                let html = '';
+                available.forEach(type => {
+                    const config = this.getFacilityConfig(type);
+                    if (!config) return;
+                    
+                    // 检查资源
+                    let canAfford = true;
+                    let costText = '';
+                    
+                    for (const [resource, cost] of Object.entries(config.cost)) {
+                        let current = 0;
+                        if (this.stage === 1) {
+                            current = this.resources[resource] || 0;
+                        } else if (this.stage === 2) {
+                            current = this.resources[resource] || 0;
+                        } else if (this.stage === 3) {
+                            current = this.stage3Resources[resource] || 0;
+                        }
+                        
+                        if (current < cost) canAfford = false;
+                        
+                        const resourceName = {
+                            nutrients: '营养',
+                            energy: '能量',
+                            swarmPoints: '群体点',
+                            food: '食物'
+                        }[resource] || resource;
+                        
+                        costText += `${cost}${resourceName} `;
+                    }
+                    
+                    html += `
+                        <div class="deploy-card ${canAfford ? '' : 'disabled'}" onclick="${canAfford ? `game.deployFacility('${type}')` : ''}">
+                            <div class="deploy-icon">${config.icon}</div>
+                            <div class="deploy-name">${config.name}</div>
+                            <div class="deploy-cost ${canAfford ? '' : 'cannot-afford'}">${costText}</div>
+                        </div>
+                    `;
+                });
+                
+                options.innerHTML = html;
+            }
+            
+            updateZoneIndicator() {
+                const indicator = document.getElementById('zoneIndicator');
+                const zoneNames = {
+                    normal: '📍 普通区域',
+                    nutrient: '🌿 营养区',
+                    danger: '☠️ 危险区'
+                };
+                
+                indicator.textContent = zoneNames[this.currentZone] || '📍 普通区域';
+                indicator.className = 'zone-indicator ' + this.currentZone;
+            }
+            
+            // ==================== 视觉效果 ====================
             spawnParticles(x, y, count, color) {
                 for (let i = 0; i < count; i++) {
                     const angle = (Math.PI * 2 * i) / count;
-                    const speed = 50 + Math.random() * 50;
+                    const speed = 30 + Math.random() * 40;
                     this.particles.push({
                         x: x,
                         y: y,
@@ -1625,428 +1823,7 @@
                 element.style.color = color;
                 document.getElementById('canvasContainer').appendChild(element);
                 
-                this.floatingTexts.push({
-                    element: element,
-                    x: x,
-                    y: y,
-                    startY: y,
-                    life: 1
-                });
-            }
-            
-            // ==================== 升级系统 ====================
-            buyUpgrade(upgradeId) {
-                const upgrade = this.upgrades[upgradeId];
-                if (this.resources[upgrade.costType] >= upgrade.cost) {
-                    this.resources[upgrade.costType] -= upgrade.cost;
-                    upgrade.level++;
-                    upgrade.cost = Math.floor(upgrade.cost * 1.5);
-                    
-                    // 应用升级效果
-                    if (upgradeId === 'membrane') {
-                        this.resourceCaps.nutrients += upgrade.effect;
-                        this.resourceCaps.energy += upgrade.effect;
-                    }
-                    
-                    this.updateUI();
-                }
-            }
-            
-            // ==================== 阶段2: 多细胞 ====================
-            selectCellType(type) {
-                this.selectedCellType = type;
-                document.querySelectorAll('.cell-type-card').forEach(card => {
-                    card.classList.remove('selected');
-                });
-                event.currentTarget.classList.add('selected');
-            }
-            
-            differentiateCell() {
-                const cost = 10;
-                if (this.resources.nutrients >= cost && this.resources.cells > 1) {
-                    this.resources.nutrients -= cost;
-                    this.resources.cells--;
-                    
-                    switch (this.selectedCellType) {
-                        case 'nerve':
-                            this.resources.nerveCells++;
-                            break;
-                        case 'muscle':
-                            this.resources.muscleCells++;
-                            break;
-                        case 'digestive':
-                            this.resources.digestiveCells++;
-                            break;
-                    }
-                    
-                    this.updateUI();
-                    this.showFloatingText(
-                        this.canvas.width / 2,
-                        this.canvas.height / 2,
-                        '细胞分化成功!',
-                        '#8844ff'
-                    );
-                }
-            }
-            
-            checkOrgans() {
-                // 检查心脏
-                if (!this.organs.heart.formed &&
-                    this.resources.muscleCells >= this.organs.heart.required.muscle &&
-                    this.resources.nerveCells >= this.organs.heart.required.nerve) {
-                    this.organs.heart.formed = true;
-                    this.unlockAchievement('heart', '心脏形成', '形成心脏器官');
-                }
-                
-                // 检查大脑
-                if (!this.organs.brain.formed &&
-                    this.resources.nerveCells >= this.organs.brain.required.nerve &&
-                    this.resources.muscleCells >= this.organs.brain.required.muscle) {
-                    this.organs.brain.formed = true;
-                    this.unlockAchievement('brain', '大脑形成', '形成大脑器官');
-                }
-                
-                // 检查消化系统
-                if (!this.organs.digestive.formed &&
-                    this.resources.digestiveCells >= this.organs.digestive.required.digestive &&
-                    this.resources.muscleCells >= this.organs.digestive.required.muscle) {
-                    this.organs.digestive.formed = true;
-                    this.unlockAchievement('digestive', '消化系统', '形成消化系统');
-                }
-            }
-            
-            // ==================== 阶段3: 海洋生物 ====================
-            expandTerritory() {
-                const unowned = this.territoryData.filter(t => !t.owned);
-                if (unowned.length > 0 && this.resources.swarmPoints >= 50) {
-                    this.resources.swarmPoints -= 50;
-                    const target = unowned[0];
-                    target.owned = true;
-                    this.resources.territories++;
-                    
-                    // 增加鱼群规模
-                    this.swarmSize += 5;
-                    this.addFishToSchool(5);
-                    
-                    this.updateUI();
-                    this.showFloatingText(
-                        this.canvas.width / 2,
-                        this.canvas.height / 2,
-                        `占领 ${target.name}!`,
-                        '#00ff88'
-                    );
-                    
-                    if (this.resources.territories >= 5 && !this.achievements.has('conqueror')) {
-                        this.unlockAchievement('conqueror', '领地征服者', '控制5个领地');
-                    }
-                }
-            }
-            
-            addFishToSchool(count) {
-                for (let i = 0; i < count; i++) {
-                    this.fishSchool.push({
-                        x: this.canvas.width / 2 + (Math.random() - 0.5) * 100,
-                        y: this.canvas.height / 2 + (Math.random() - 0.5) * 100,
-                        vx: (Math.random() - 0.5) * 2,
-                        vy: (Math.random() - 0.5) * 2,
-                        size: 8 + Math.random() * 4
-                    });
-                }
-            }
-            
-            // ==================== 进化系统 ====================
-            checkEvolution() {
-                let progress = 0;
-                let canEvolve = false;
-                
-                if (this.stage === 1) {
-                    // 阶段1: 能量100, 细胞10
-                    const energyProgress = Math.min(this.resources.energy / 100, 1);
-                    const cellProgress = Math.min(this.resources.cells / 10, 1);
-                    progress = (energyProgress + cellProgress) / 2 * 100;
-                    canEvolve = this.resources.energy >= 100 && this.resources.cells >= 10;
-                } else if (this.stage === 2) {
-                    // 阶段2: 所有器官形成, 信号50
-                    const organsFormed = Object.values(this.organs).filter(o => o.formed).length;
-                    const organProgress = organsFormed / 3;
-                    const signalProgress = Math.min(this.resources.signals / 50, 1);
-                    progress = (organProgress + signalProgress) / 2 * 100;
-                    canEvolve = organsFormed === 3 && this.resources.signals >= 50;
-                } else if (this.stage === 3) {
-                    // 阶段3: 5个领地, 鱼群100
-                    const territoryProgress = Math.min(this.resources.territories / 5, 1);
-                    const swarmProgress = Math.min(this.swarmSize / 100, 1);
-                    progress = (territoryProgress + swarmProgress) / 2 * 100;
-                    canEvolve = this.resources.territories >= 5 && this.swarmSize >= 100;
-                }
-                
-                document.getElementById('evolutionFill').style.width = progress + '%';
-                document.getElementById('evolutionPercent').textContent = Math.floor(progress) + '%';
-                
-                const evolveBtn = document.getElementById('evolveBtn');
-                if (canEvolve) {
-                    evolveBtn.classList.add('active');
-                } else {
-                    evolveBtn.classList.remove('active');
-                }
-            }
-            
-            attemptEvolution() {
-                let canEvolve = false;
-                
-                if (this.stage === 1) {
-                    canEvolve = this.resources.energy >= 100 && this.resources.cells >= 10;
-                } else if (this.stage === 2) {
-                    const organsFormed = Object.values(this.organs).filter(o => o.formed).length;
-                    canEvolve = organsFormed === 3 && this.resources.signals >= 50;
-                } else if (this.stage === 3) {
-                    canEvolve = this.resources.territories >= 5 && this.swarmSize >= 100;
-                }
-                
-                if (canEvolve) {
-                    this.evolve();
-                }
-            }
-            
-            evolve() {
-                // 播放进化特效
-                const effect = document.getElementById('evolutionEffect');
-                effect.classList.add('active');
-                setTimeout(() => effect.classList.remove('active'), 2000);
-                
-                this.stage++;
-                
-                // 阶段切换处理
-                if (this.stage === 2) {
-                    this.initStage2();
-                    document.getElementById('unicellularPanel').style.display = 'none';
-                    document.getElementById('differentiationPanel').style.display = 'block';
-                    this.unlockAchievement('multicellular', '多细胞生物', '进化到多细胞阶段');
-                } else if (this.stage === 3) {
-                    this.initStage3();
-                    document.getElementById('differentiationPanel').style.display = 'none';
-                    document.getElementById('marinePanel').style.display = 'block';
-                    this.unlockAchievement('marine', '海洋生物', '进化到海洋生物阶段');
-                } else if (this.stage === 4) {
-                    alert('恭喜!你已完成MVP所有阶段!后续内容开发中...');
-                    this.stage = 3;
-                    return;
-                }
-                
-                this.updateStageUI();
-                this.saveGame();
-            }
-            
-            updateStageUI() {
-                const stageNames = ['', '单细胞', '多细胞', '海洋生物', '陆地生物'];
-                document.getElementById('stageName').textContent = stageNames[this.stage];
-                document.getElementById('stageNumber').textContent = this.stage;
-                
-                // 更新颜色主题
-                const stageColors = {
-                    1: 'linear-gradient(135deg, rgba(0, 200, 200, 0.3), rgba(0, 150, 255, 0.3))',
-                    2: 'linear-gradient(135deg, rgba(136, 68, 255, 0.3), rgba(200, 0, 255, 0.3))',
-                    3: 'linear-gradient(135deg, rgba(0, 100, 200, 0.3), rgba(0, 50, 150, 0.3))'
-                };
-                document.querySelector('.stage-indicator').style.background = stageColors[this.stage];
-            }
-            
-            // ==================== UI更新 ====================
-            secondUpdate() {
-                this.playTime++;
-                const hours = Math.floor(this.playTime / 3600).toString().padStart(2, '0');
-                const minutes = Math.floor((this.playTime % 3600) / 60).toString().padStart(2, '0');
-                const seconds = (this.playTime % 60).toString().padStart(2, '0');
-                document.getElementById('playTime').textContent = `${hours}:${minutes}:${seconds}`;
-                
-                this.updateUI();
-            }
-            
-            updateUI() {
-                this.updateResourcesUI();
-                this.updateUpgradesUI();
-                
-                if (this.stage === 2) {
-                    this.updateStage2UI();
-                } else if (this.stage === 3) {
-                    this.updateStage3UI();
-                }
-            }
-            
-            updateResourcesUI() {
-                const resourceList = document.getElementById('resourceList');
-                let html = '';
-                
-                // 阶段1资源
-                html += this.createResourceItem('🍃', '营养', this.resources.nutrients, this.resourceCaps.nutrients, this.upgrades.cilia.level * this.upgrades.cilia.effect);
-                html += this.createResourceItem('⚡', '能量', this.resources.energy, this.resourceCaps.energy, this.upgrades.metabolism.level * this.upgrades.metabolism.effect * 2);
-                html += this.createResourceItem('🔬', '细胞', this.resources.cells, '-', 0);
-                
-                // 阶段2资源
-                if (this.stage >= 2) {
-                    html += this.createResourceItem('📡', '信号', this.resources.signals, this.resourceCaps.signals, this.resources.nerveCells * 0.1);
-                    html += this.createResourceItem('🧠', '神经细胞', this.resources.nerveCells, '-', 0);
-                    html += this.createResourceItem('💪', '肌肉细胞', this.resources.muscleCells, '-', 0);
-                    html += this.createResourceItem('🍽️', '消化细胞', this.resources.digestiveCells, '-', 0);
-                }
-                
-                // 阶段3资源
-                if (this.stage >= 3) {
-                    html += this.createResourceItem('🐟', '食物', this.resources.food, this.resourceCaps.food, this.territoryData.filter(t => t.owned).length * 2);
-                    html += this.createResourceItem('🌊', '群体点数', Math.floor(this.resources.swarmPoints), this.resourceCaps.swarmPoints, this.territoryData.filter(t => t.owned).length * 0.5);
-                }
-                
-                resourceList.innerHTML = html;
-            }
-            
-            createResourceItem(icon, name, value, cap, rate) {
-                const valueStr = this.formatNumber(value);
-                const capStr = cap !== '-' ? ' / ' + this.formatNumber(cap) : '';
-                const rateStr = rate > 0 ? `+${this.formatNumber(rate)}/s` : (rate < 0 ? `${this.formatNumber(rate)}/s` : '');
-                const rateClass = rate >= 0 ? 'resource-rate' : 'resource-rate negative';
-                
-                return `
-                    <div class="resource-item">
-                        <div style="display: flex; align-items: center;">
-                            <div class="resource-icon">${icon}</div>
-                            <div class="resource-info">
-                                <div class="resource-name">${name}</div>
-                                <div class="resource-value">${valueStr}${capStr}</div>
-                            </div>
-                        </div>
-                        ${rateStr ? `<div class="${rateClass}">${rateStr}</div>` : ''}
-                    </div>
-                `;
-            }
-            
-            updateUpgradesUI() {
-                if (this.stage !== 1) return;
-                
-                const upgradeList = document.getElementById('upgradeList');
-                const upgrades = [
-                    { id: 'metabolism', name: '代谢增强', desc: '提高能量产生速度', icon: '⚡' },
-                    { id: 'cilia', name: '纤毛运动', desc: '自动收集周围营养', icon: '🌊' },
-                    { id: 'membrane', name: '细胞膜强化', desc: '增加资源存储上限', icon: '🛡️' }
-                ];
-                
-                let html = '';
-                upgrades.forEach(u => {
-                    const upgrade = this.upgrades[u.id];
-                    const canAfford = this.resources[upgrade.costType] >= upgrade.cost;
-                    html += `
-                        <div class="upgrade-item ${canAfford ? '' : 'disabled'}" onclick="game.buyUpgrade('${u.id}')">
-                            <div class="item-header">
-                                <span class="item-name">${u.icon} ${u.name}</span>
-                                <span class="item-level">Lv.${upgrade.level}</span>
-                            </div>
-                            <div class="item-desc">${u.desc}</div>
-                            <div class="item-cost">
-                                <span class="cost-tag ${canAfford ? 'can-afford' : 'cannot-afford'}">
-                                    ${upgrade.cost} ${upgrade.costType === 'nutrients' ? '营养' : '能量'}
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                upgradeList.innerHTML = html;
-            }
-            
-            updateStage2UI() {
-                // 更新细胞数量
-                document.getElementById('nerveCount').textContent = this.resources.nerveCells;
-                document.getElementById('muscleCount').textContent = this.resources.muscleCells;
-                document.getElementById('digestiveCount').textContent = this.resources.digestiveCells;
-                
-                // 更新分化按钮
-                const btn = document.getElementById('differentiateBtn');
-                const canDifferentiate = this.resources.nutrients >= 10 && this.resources.cells > 1;
-                btn.style.opacity = canDifferentiate ? '1' : '0.5';
-                
-                // 更新器官列表
-                const organsList = document.getElementById('organsList');
-                const organs = [
-                    { key: 'heart', name: '心脏', icon: '❤️', desc: '需要: 肌肉×10, 神经×5' },
-                    { key: 'brain', name: '大脑', icon: '🧠', desc: '需要: 神经×15, 肌肉×5' },
-                    { key: 'digestive', name: '消化系统', icon: '🍽️', desc: '需要: 消化×10, 肌肉×5' }
-                ];
-                
-                let html = '';
-                organs.forEach(o => {
-                    const formed = this.organs[o.key].formed;
-                    html += `
-                        <div class="organ-item">
-                            <div class="organ-icon ${formed ? 'formed' : ''}">${o.icon}</div>
-                            <div class="organ-info">
-                                <div class="organ-name">${o.name}</div>
-                                <div class="organ-status">${formed ? '已形成 ✓' : o.desc}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                organsList.innerHTML = html;
-            }
-            
-            updateStage3UI() {
-                // 更新领地网格
-                const territoryGrid = document.getElementById('territoryGrid');
-                let html = '';
-                this.territoryData.forEach(t => {
-                    const className = t.owned ? 'owned' : (t.contested ? 'contested' : '');
-                    const icon = t.owned ? '🪸' : (t.contested ? '⚔️' : '❓');
-                    html += `
-                        <div class="territory-card ${className}">
-                            <div class="territory-icon">${icon}</div>
-                            <div class="territory-name">${t.name}</div>
-                        </div>
-                    `;
-                });
-                territoryGrid.innerHTML = html;
-                
-                // 更新鱼群统计
-                document.getElementById('swarmSize').textContent = this.swarmSize;
-                const bonus = Math.floor(this.swarmSize / 10) * 10;
-                document.getElementById('swarmBonus').textContent = `+${bonus}%`;
-                const income = this.territoryData.filter(t => t.owned).length * 2;
-                document.getElementById('territoryIncome').textContent = `${income}/秒`;
-                
-                // 更新扩张按钮
-                const btn = document.getElementById('expandTerritoryBtn');
-                const canExpand = this.resources.swarmPoints >= 50 && this.territoryData.some(t => !t.owned);
-                btn.style.opacity = canExpand ? '1' : '0.5';
-            }
-            
-            switchTab(tab) {
-                this.currentTab = tab;
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                
-                event.target.classList.add('active');
-                document.getElementById(tab + 'Tab').classList.add('active');
-            }
-            
-            formatNumber(num) {
-                if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
-                if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
-                if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-                if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-                return Math.floor(num).toString();
-            }
-            
-            // ==================== 成就系统 ====================
-            unlockAchievement(id, title, desc) {
-                if (this.achievements.has(id)) return;
-                
-                this.achievements.add(id);
-                
-                const popup = document.getElementById('achievementPopup');
-                document.getElementById('achievementDesc').textContent = `${title}: ${desc}`;
-                popup.classList.add('show');
-                
-                setTimeout(() => {
-                    popup.classList.remove('show');
-                }, 3000);
+                setTimeout(() => element.remove(), 1200);
             }
             
             // ==================== 存档系统 ====================
@@ -2054,22 +1831,26 @@
                 const saveData = {
                     stage: this.stage,
                     playTime: this.playTime,
+                    player: { x: this.player.x, y: this.player.y },
                     resources: this.resources,
                     resourceCaps: this.resourceCaps,
-                    upgrades: this.upgrades,
+                    stage2Resources: this.stage2Resources,
+                    stage2Caps: this.stage2Caps,
+                    stage3Resources: this.stage3Resources,
+                    stage3Caps: this.stage3Caps,
+                    facilities: this.facilities,
                     organs: this.organs,
                     territoryData: this.territoryData,
                     swarmSize: this.swarmSize,
-                    achievements: Array.from(this.achievements),
-                    lastSave: Date.now()
+                    zones: this.zones
                 };
                 
-                localStorage.setItem('evolutionGameSave', JSON.stringify(saveData));
-                this.showFloatingText(this.canvas.width / 2, this.canvas.height - 50, '游戏已保存!', '#00ff88');
+                localStorage.setItem('evolutionGameSave_v2', JSON.stringify(saveData));
+                this.showFloatingText(this.canvas.width / 2, this.canvas.height - 100, '💾 已保存', '#00ff88');
             }
             
             loadGame() {
-                const saveString = localStorage.getItem('evolutionGameSave');
+                const saveString = localStorage.getItem('evolutionGameSave_v2');
                 if (!saveString) return;
                 
                 try {
@@ -2077,72 +1858,38 @@
                     
                     this.stage = saveData.stage || 1;
                     this.playTime = saveData.playTime || 0;
-                    this.resources = { ...this.resources, ...saveData.resources };
-                    this.resourceCaps = { ...this.resourceCaps, ...saveData.resourceCaps };
-                    this.upgrades = { ...this.upgrades, ...saveData.upgrades };
-                    this.organs = saveData.organs || this.organs;
-                    this.territoryData = saveData.territoryData || this.territoryData;
-                    this.swarmSize = saveData.swarmSize || 1;
-                    this.achievements = new Set(saveData.achievements || []);
                     
-                    // 恢复阶段UI
-                    this.updateStageUI();
-                    
-                    if (this.stage === 2) {
-                        document.getElementById('unicellularPanel').style.display = 'none';
-                        document.getElementById('differentiationPanel').style.display = 'block';
-                        this.initStage2();
-                    } else if (this.stage === 3) {
-                        document.getElementById('unicellularPanel').style.display = 'none';
-                        document.getElementById('differentiationPanel').style.display = 'none';
-                        document.getElementById('marinePanel').style.display = 'block';
-                        this.initStage3();
+                    if (saveData.player) {
+                        this.player.x = saveData.player.x;
+                        this.player.y = saveData.player.y;
                     }
                     
+                    this.resources = { ...this.resources, ...saveData.resources };
+                    this.resourceCaps = { ...this.resourceCaps, ...saveData.resourceCaps };
+                    this.stage2Resources = { ...this.stage2Resources, ...saveData.stage2Resources };
+                    this.stage2Caps = { ...this.stage2Caps, ...saveData.stage2Caps };
+                    this.stage3Resources = { ...this.stage3Resources, ...saveData.stage3Resources };
+                    this.stage3Caps = { ...this.stage3Caps, ...saveData.stage3Caps };
+                    this.facilities = saveData.facilities || [];
+                    this.organs = saveData.organs || this.organs;
+                    this.territoryData = saveData.territoryData || [];
+                    this.swarmSize = saveData.swarmSize || 1;
+                    
+                    if (saveData.zones) {
+                        this.zones = saveData.zones;
+                    }
+                    
+                    this.updateCamera();
+                    this.updateStageUI();
                     this.updateUI();
                 } catch (e) {
                     console.error('加载存档失败:', e);
                 }
             }
             
-            exportSave() {
-                const saveString = localStorage.getItem('evolutionGameSave');
-                if (saveString) {
-                    const blob = new Blob([saveString], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `evolution_save_${Date.now()}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-            }
-            
-            importSave() {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.json';
-                input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                            try {
-                                localStorage.setItem('evolutionGameSave', event.target.result);
-                                location.reload();
-                            } catch (e) {
-                                alert('导入存档失败');
-                            }
-                        };
-                        reader.readAsText(file);
-                    }
-                };
-                input.click();
-            }
-            
             hardReset() {
-                if (confirm('确定要重置所有进度吗?此操作不可恢复!')) {
-                    localStorage.removeItem('evolutionGameSave');
+                if (confirm('确定要重置所有进度吗？此操作不可恢复！')) {
+                    localStorage.removeItem('evolutionGameSave_v2');
                     location.reload();
                 }
             }
