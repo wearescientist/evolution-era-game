@@ -332,6 +332,17 @@
         .deploy-btn:disabled {
             opacity: 0.35;
             cursor: not-allowed;
+            filter: grayscale(0.8);
+        }
+        
+        .deploy-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 200, 0.3);
+        }
+        
+        .deploy-btn:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 255, 200, 0.2);
         }
         
         .deploy-btn-icon {
@@ -437,13 +448,15 @@
         }
         
         .facility-btn.upgrade:hover:not(:disabled) {
-            transform: scale(1.05);
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
         
         .facility-btn.upgrade:disabled {
             background: rgba(255, 255, 255, 0.1);
             color: rgba(255, 255, 255, 0.4);
             cursor: not-allowed;
+            filter: grayscale(1);
         }
         
         .facility-btn.remove {
@@ -1401,14 +1414,31 @@
                 this.canvas.addEventListener('touchend', endTouch);
                 this.canvas.addEventListener('touchcancel', endTouch);
                 
-                // 鼠标点击移动
+                // 鼠标点击移动 - 改进版，支持拖动
+                let isMouseDown = false;
                 this.canvas.addEventListener('mousedown', (e) => {
+                    isMouseDown = true;
                     const rect = this.canvas.getBoundingClientRect();
                     this.player.targetX = e.clientX - rect.left;
                     this.player.targetY = e.clientY - rect.top;
                 });
                 
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (isMouseDown) {
+                        const rect = this.canvas.getBoundingClientRect();
+                        this.player.targetX = e.clientX - rect.left;
+                        this.player.targetY = e.clientY - rect.top;
+                    }
+                });
+                
                 this.canvas.addEventListener('mouseup', () => {
+                    isMouseDown = false;
+                    this.player.targetX = null;
+                    this.player.targetY = null;
+                });
+                
+                this.canvas.addEventListener('mouseleave', () => {
+                    isMouseDown = false;
                     this.player.targetX = null;
                     this.player.targetY = null;
                 });
@@ -1794,53 +1824,89 @@
             
             renderPlayer() {
                 const { x, y, radius, vx, vy } = this.player;
+                const time = Date.now() / 200;
                 
-                const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, radius * 3);
-                gradient.addColorStop(0, 'rgba(0, 255, 200, 0.3)');
+                // 玩家光晕效果（脉冲）
+                const pulseRadius = radius * 3 + Math.sin(time) * 5;
+                const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, pulseRadius);
+                gradient.addColorStop(0, 'rgba(0, 255, 200, 0.4)');
+                gradient.addColorStop(0.5, 'rgba(0, 255, 200, 0.1)');
                 gradient.addColorStop(1, 'rgba(0, 255, 200, 0)');
                 this.ctx.fillStyle = gradient;
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, radius * 3, 0, Math.PI * 2);
+                this.ctx.arc(x, y, pulseRadius, 0, Math.PI * 2);
                 this.ctx.fill();
                 
+                // 玩家主体
                 this.ctx.beginPath();
                 this.ctx.arc(x, y, radius, 0, Math.PI * 2);
-                this.ctx.fillStyle = 'rgba(0, 200, 180, 0.8)';
+                this.ctx.fillStyle = 'rgba(0, 200, 180, 0.9)';
                 this.ctx.fill();
                 this.ctx.strokeStyle = '#00ffff';
                 this.ctx.lineWidth = 3;
                 this.ctx.stroke();
                 
+                // 内部核心
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, radius * 0.3, 0, Math.PI * 2);
-                this.ctx.fillStyle = 'rgba(0, 100, 150, 0.9)';
+                this.ctx.arc(x, y, radius * 0.35, 0, Math.PI * 2);
+                this.ctx.fillStyle = 'rgba(0, 100, 150, 0.95)';
                 this.ctx.fill();
                 
+                // 核心发光
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, radius * 0.2, 0, Math.PI * 2);
+                this.ctx.fillStyle = 'rgba(200, 255, 255, 0.8)';
+                this.ctx.fill();
+                
+                // 移动方向指示器
                 const speed = Math.sqrt(vx * vx + vy * vy);
-                if (speed > 10) {
+                if (speed > 5) {
                     const angle = Math.atan2(vy, vx);
+                    // 箭头
                     this.ctx.beginPath();
-                    this.ctx.moveTo(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
-                    this.ctx.lineTo(x + Math.cos(angle) * (radius + 15), y + Math.sin(angle) * (radius + 15));
-                    this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
-                    this.ctx.lineWidth = 3;
+                    this.ctx.moveTo(x + Math.cos(angle) * (radius + 5), y + Math.sin(angle) * (radius + 5));
+                    this.ctx.lineTo(x + Math.cos(angle) * (radius + 20), y + Math.sin(angle) * (radius + 20));
+                    this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)';
+                    this.ctx.lineWidth = 4;
+                    this.ctx.lineCap = 'round';
                     this.ctx.stroke();
+                    
+                    // 箭头头部
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x + Math.cos(angle) * (radius + 20), y + Math.sin(angle) * (radius + 20));
+                    this.ctx.lineTo(x + Math.cos(angle - 0.5) * (radius + 12), y + Math.sin(angle - 0.5) * (radius + 12));
+                    this.ctx.lineTo(x + Math.cos(angle + 0.5) * (radius + 12), y + Math.sin(angle + 0.5) * (radius + 12));
+                    this.ctx.closePath();
+                    this.ctx.fillStyle = 'rgba(0, 255, 255, 0.8)';
+                    this.ctx.fill();
                 }
                 
-                const time = Date.now() / 200;
-                for (let i = 0; i < 8; i++) {
-                    const angle = (i / 8) * Math.PI * 2 + time;
+                // 纤毛动画（更流畅）
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i / 12) * Math.PI * 2 + time * 0.5;
+                    const waveOffset = Math.sin(time * 2 + i) * 3;
                     const x1 = x + Math.cos(angle) * radius;
                     const y1 = y + Math.sin(angle) * radius;
-                    const x2 = x + Math.cos(angle) * (radius + 8);
-                    const y2 = y + Math.sin(angle) * (radius + 8);
+                    const x2 = x + Math.cos(angle) * (radius + 10 + waveOffset);
+                    const y2 = y + Math.sin(angle) * (radius + 10 + waveOffset);
                     
                     this.ctx.beginPath();
                     this.ctx.moveTo(x1, y1);
                     this.ctx.lineTo(x2, y2);
-                    this.ctx.strokeStyle = 'rgba(0, 255, 200, 0.5)';
+                    this.ctx.strokeStyle = `rgba(0, 255, 200, ${0.4 + Math.sin(time + i) * 0.2})`;
                     this.ctx.lineWidth = 2;
                     this.ctx.stroke();
+                }
+                
+                // 部署区域提示
+                if (this.isInDeployZone()) {
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, radius + 15, 0, Math.PI * 2);
+                    this.ctx.strokeStyle = `rgba(0, 255, 136, ${0.5 + Math.sin(time * 3) * 0.3})`;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.setLineDash([5, 5]);
+                    this.ctx.stroke();
+                    this.ctx.setLineDash([]);
                 }
             }
             
@@ -1968,7 +2034,23 @@
             }
             
             deployFacility(type) {
-                if (!this.canDeploy(type)) return;
+                if (!this.canDeploy(type)) {
+                    // 显示为什么不能部署
+                    const facilityType = this.getFacilityType(type);
+                    const inZone = this.isInDeployZone();
+                    
+                    if (!inZone) {
+                        this.showFloatingText(this.player.x, this.player.y - 30, '需要进入资源区!', '#ffaa00');
+                    } else {
+                        for (let [res, amount] of Object.entries(facilityType.cost)) {
+                            if (this.resources[res] < amount) {
+                                this.showFloatingText(this.player.x, this.player.y - 30, `${this.getResourceName(res)}不足!`, '#ff5555');
+                                break;
+                            }
+                        }
+                    }
+                    return;
+                }
                 
                 const facilityType = this.getFacilityType(type);
                 
@@ -1984,8 +2066,15 @@
                     createdAt: Date.now()
                 });
                 
-                this.spawnParticles(this.player.x, this.player.y, 10, '#00ffff');
-                this.showFloatingText(this.player.x, this.player.y - 30, `部署 ${facilityType.name}!`, '#00ffff');
+                // 更强的视觉反馈
+                this.spawnParticles(this.player.x, this.player.y, 15, '#00ffff');
+                this.spawnParticles(this.player.x, this.player.y, 10, '#ffffff');
+                this.showFloatingText(this.player.x, this.player.y - 40, `+${facilityType.name}`, '#00ffff');
+                
+                // 震动效果（如果支持）
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
                 
                 this.updateFacilityUI();
                 
@@ -2004,10 +2093,17 @@
                     this.resources.energy -= upgradeCost;
                     facility.level++;
                     
-                    this.spawnParticles(facility.x, facility.y, 8, '#00ff88');
-                    this.showFloatingText(facility.x, facility.y - 30, `升级至 Lv.${facility.level}!`, '#00ff88');
+                    this.spawnParticles(facility.x, facility.y, 12, '#00ff88');
+                    this.spawnParticles(facility.x, facility.y, 8, '#ffff00');
+                    this.showFloatingText(facility.x, facility.y - 40, `Lv.${facility.level}!`, '#00ff88');
+                    
+                    if (navigator.vibrate) {
+                        navigator.vibrate([30, 30, 30]);
+                    }
                     
                     this.updateFacilityUI();
+                } else {
+                    this.showFloatingText(facility.x, facility.y - 30, '能量不足!', '#ff5555');
                 }
             }
             
