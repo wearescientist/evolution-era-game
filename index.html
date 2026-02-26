@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>进化纪元</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>进化纪元 v3</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -33,10 +34,10 @@
             z-index: 100;
         }
         .stage-badge {
-            padding: 5px 12px;
+            padding: 4px 10px;
             background: linear-gradient(135deg, rgba(0, 200, 200, 0.3), rgba(0, 150, 255, 0.3));
-            border-radius: 15px;
-            font-size: 14px;
+            border-radius: 12px;
+            font-size: 13px;
         }
         .resource-display {
             display: flex;
@@ -45,11 +46,9 @@
             font-size: 18px;
             font-weight: bold;
         }
-        .resource-display .icon { font-size: 20px; }
         .resource-display .rate {
-            font-size: 12px;
+            font-size: 11px;
             color: #00ff88;
-            font-weight: normal;
         }
         /* 游戏区域 */
         .game-area {
@@ -62,166 +61,106 @@
             height: 100%;
             display: block;
         }
-        /* 底部部署面板 */
-        .deploy-panel {
+        /* 部署按钮 */
+        .deploy-buttons {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(10, 22, 40, 0.98);
-            border-top: 1px solid rgba(0, 255, 255, 0.2);
-            border-radius: 15px 15px 0 0;
-            transition: transform 0.3s ease;
-            z-index: 90;
-            max-height: 35vh;
-        }
-        .deploy-panel.collapsed {
-            transform: translateY(calc(100% - 40px));
-        }
-        .panel-header {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
-            cursor: pointer;
-        }
-        .panel-handle {
-            width: 40px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 2px;
-        }
-        .panel-content {
-            padding: 0 15px 15px;
-        }
-        .deploy-status {
-            text-align: center;
-            padding: 8px;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 10px;
-        }
-        .deploy-status.in-range {
-            color: #00ff88;
-            background: rgba(0, 255, 136, 0.1);
-            border-radius: 8px;
-        }
-        .facility-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
-            margin-bottom: 15px;
+            z-index: 90;
+            background: rgba(10, 22, 40, 0.9);
+            padding: 10px;
+            border-radius: 16px;
+            border: 1px solid rgba(0, 255, 255, 0.2);
         }
-        .facility-btn {
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+        .deploy-btn {
+            width: 65px;
+            height: 65px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
             cursor: pointer;
-            text-align: left;
-            transition: all 0.2s;
-        }
-        .facility-btn:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(0, 255, 255, 0.3);
-        }
-        .facility-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .facility-btn .name {
-            font-size: 14px;
-            font-weight: bold;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .facility-btn .cost {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.6);
-        }
-        .facility-btn .output {
-            font-size: 11px;
-            color: #00ff88;
-        }
-        /* 已部署设施列表 */
-        .deployed-section {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 10px;
-        }
-        .deployed-title {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 8px;
-        }
-        .deployed-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-        }
-        .deployed-item {
-            display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
+            justify-content: center;
+            gap: 2px;
+            font-size: 11px;
         }
-        .deployed-item .info {
-            flex: 1;
+        .deploy-btn:disabled {
+            opacity: 0.3;
         }
-        .deployed-item .name {
-            font-size: 14px;
-            font-weight: bold;
-        }
-        .deployed-item .level {
+        .deploy-btn .icon { font-size: 22px; }
+        .deploy-btn .output { color: #00ff88; font-size: 10px; }
+        /* 状态提示 */
+        .status-hint {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.6);
+            z-index: 95;
         }
-        .deployed-item .output {
-            font-size: 12px;
-            color: #00ff88;
-        }
-        .deployed-item .actions {
-            display: flex;
-            gap: 5px;
-        }
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        .action-btn.upgrade {
+        .status-hint.in-zone {
             background: rgba(0, 255, 136, 0.2);
             color: #00ff88;
         }
-        .action-btn.remove {
+        .status-hint.out-zone {
             background: rgba(255, 85, 85, 0.2);
-            color: #ff5555;
+            color: #ff8888;
+        }
+        /* 设施列表 */
+        .facility-list {
+            position: fixed;
+            top: 100px;
+            right: 10px;
+            width: 130px;
+            max-height: 35vh;
+            overflow-y: auto;
+            background: rgba(10, 22, 40, 0.9);
+            border-radius: 12px;
+            padding: 10px;
+            z-index: 90;
+            font-size: 11px;
+        }
+        .facility-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            margin-bottom: 4px;
+        }
+        .mini-btn {
+            width: 22px;
+            height: 22px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
         }
         /* 进化按钮 */
         .evolve-btn {
             position: fixed;
-            bottom: 40vh;
-            right: 15px;
-            width: 60px;
-            height: 60px;
+            top: 100px;
+            left: 10px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             border: none;
-            background: linear-gradient(135deg, #00ffff, #0088ff);
+            background: linear-gradient(135deg, #ff00ff, #8800ff);
             color: #fff;
             font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
-            z-index: 80;
+            z-index: 90;
             display: none;
         }
-        .evolve-btn.visible {
-            display: block;
-        }
+        .evolve-btn.visible { display: block; }
     </style>
 </head>
 <body>
@@ -229,8 +168,7 @@
         <div class="top-bar">
             <div class="stage-badge" id="stageBadge">单细胞 (1/3)</div>
             <div class="resource-display">
-                <span class="icon">✨</span>
-                <span id="evolutionPoints">10</span>
+                <span>✨ <span id="evolutionPoints">50</span></span>
                 <span class="rate" id="evolutionRate">+0/s</span>
             </div>
         </div>
@@ -239,342 +177,317 @@
             <canvas id="gameCanvas"></canvas>
         </div>
         
-        <div class="deploy-panel collapsed" id="deployPanel">
-            <div class="panel-header" onclick="togglePanel()">
-                <div class="panel-handle"></div>
-            </div>
-            <div class="panel-content">
-                <div class="deploy-status" id="deployStatus">移动到绿色区域部署</div>
-                <div class="facility-grid" id="facilityGrid"></div>
-                <div class="deployed-section">
-                    <div class="deployed-title">已部署设施 (<span id="deployedCount">0</span>/<span id="deployLimit">1</span>)</div>
-                    <div class="deployed-list" id="deployedList"></div>
-                </div>
-            </div>
+        <div class="status-hint out-zone" id="statusHint">移动到绿色区域部署</div>
+        
+        <div class="deploy-buttons">
+            <button class="deploy-btn" id="btn-basic" onclick="deploy('basic')">
+                <span class="icon">🔵</span>
+                <span>5</span>
+                <span class="output">+0.5</span>
+            </button>
+            <button class="deploy-btn" id="btn-collector" onclick="deploy('collector')">
+                <span class="icon">🌊</span>
+                <span>10</span>
+                <span class="output">+1</span>
+            </button>
+            <button class="deploy-btn" id="btn-booster" onclick="deploy('booster')">
+                <span class="icon">⚡</span>
+                <span>25</span>
+                <span class="output">+3</span>
+            </button>
         </div>
         
-        <button class="evolve-btn" id="evolveBtn" onclick="attemptEvolve()">🧬</button>
+        <button class="evolve-btn" id="evolveBtn" onclick="evolve()">🧬</button>
+        
+        <div class="facility-list">
+            <div style="text-align:center;margin-bottom:8px;">已部署: <span id="deployedCount">0</span>/<span id="deployLimit">5</span></div>
+            <div id="facilityList"></div>
+        </div>
     </div>
 
     <script>
-        // 游戏状态
+        const WORLD_SIZE = 2000;
+        
         const game = {
             stage: 1,
-            evolutionPoints: 10,
-            evolutionRate: 0,
+            points: 50,
+            rate: 0,
             deployed: [],
-            deployLimit: 1,
-            player: { x: 0, y: 0, targetX: null, targetY: null },
+            limit: 5,
+            player: { x: WORLD_SIZE/2, y: WORLD_SIZE/2, tx: null, ty: null },
+            cam: { x: 0, y: 0 },
             zones: [],
-            keys: {},
-            touchId: null
+            keys: {}
         };
 
-        // 设施类型
         const facilities = {
-            collector: {
-                name: '收集器',
-                icon: '🌊',
-                cost: 10,
-                output: 1,
-                desc: '每秒产出1进化点'
-            },
-            booster: {
-                name: '加速器',
-                icon: '⚡',
-                cost: 25,
-                output: 3,
-                desc: '每秒产出3进化点'
-            }
+            basic: { name: '基础', icon: '🔵', cost: 5, out: 0.5 },
+            collector: { name: '收集', icon: '🌊', cost: 10, out: 1 },
+            booster: { name: '加速', icon: '⚡', cost: 25, out: 3 }
         };
 
-        // Canvas 初始化
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
         function resize() {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
-            game.player.x = canvas.width / 2;
-            game.player.y = canvas.height / 2;
         }
 
-        // 初始化资源区
         function initZones() {
             game.zones = [];
-            for (let i = 0; i < 4; i++) {
+            // 玩家周围3个
+            for (let i = 0; i < 3; i++) {
+                const a = (Math.PI * 2 / 3) * i;
                 game.zones.push({
-                    x: 0.2 + Math.random() * 0.6,
-                    y: 0.2 + Math.random() * 0.6,
-                    radius: 0.15
+                    x: game.player.x + Math.cos(a) * 120,
+                    y: game.player.y + Math.sin(a) * 120,
+                    r: 70
+                });
+            }
+            // 随机15个
+            for (let i = 0; i < 15; i++) {
+                game.zones.push({
+                    x: 100 + Math.random() * (WORLD_SIZE - 200),
+                    y: 100 + Math.random() * (WORLD_SIZE - 200),
+                    r: 50 + Math.random() * 30
                 });
             }
         }
 
-        // 检查是否在资源区
-        function isInZone() {
-            const px = game.player.x / canvas.width;
-            const py = game.player.y / canvas.height;
+        function toScreen(wx, wy) {
+            return { x: wx - game.cam.x, y: wy - game.cam.y };
+        }
+
+        function inZone() {
             return game.zones.some(z => {
-                const dx = px - z.x;
-                const dy = py - z.y;
-                return Math.sqrt(dx * dx + dy * dy) < z.radius;
+                const dx = game.player.x - z.x;
+                const dy = game.player.y - z.y;
+                return Math.sqrt(dx*dx + dy*dy) < z.r;
             });
         }
 
-        // 渲染
         function render() {
+            // 相机跟随玩家
+            game.cam.x = game.player.x - canvas.width/2;
+            game.cam.y = game.player.y - canvas.height/2;
+
             // 背景
             ctx.fillStyle = '#0a1628';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            // 网格
+            ctx.strokeStyle = 'rgba(0,255,255,0.05)';
+            ctx.lineWidth = 1;
+            const gs = 100;
+            const ox = -game.cam.x % gs;
+            const oy = -game.cam.y % gs;
+            for (let x = ox; x < canvas.width; x += gs) {
+                ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+            }
+            for (let y = oy; y < canvas.height; y += gs) {
+                ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+            }
+
+            // 边界
+            const tl = toScreen(0, 0);
+            const br = toScreen(WORLD_SIZE, WORLD_SIZE);
+            ctx.strokeStyle = 'rgba(0,255,255,0.3)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(tl.x, tl.y, br.x-tl.x, br.y-tl.y);
+
             // 资源区
-            game.zones.forEach(z => {
-                const x = z.x * canvas.width;
-                const y = z.y * canvas.height;
-                const r = z.radius * Math.min(canvas.width, canvas.height);
+            game.zones.forEach((z, i) => {
+                const p = toScreen(z.x, z.y);
+                const initial = i < 3;
                 
-                const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-                grad.addColorStop(0, 'rgba(0, 255, 136, 0.2)');
-                grad.addColorStop(1, 'rgba(0, 255, 136, 0)');
+                const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, z.r);
+                grad.addColorStop(0, initial ? 'rgba(0,255,136,0.5)' : 'rgba(0,255,136,0.25)');
+                grad.addColorStop(1, 'rgba(0,255,136,0)');
                 ctx.fillStyle = grad;
                 ctx.beginPath();
-                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, z.r, 0, Math.PI*2);
                 ctx.fill();
                 
-                ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = initial ? 'rgba(0,255,136,0.8)' : 'rgba(0,255,136,0.4)';
+                ctx.lineWidth = initial ? 3 : 2;
+                ctx.setLineDash([5,5]);
                 ctx.beginPath();
-                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, z.r, 0, Math.PI*2);
                 ctx.stroke();
                 ctx.setLineDash([]);
             });
 
-            // 玩家
+            // 已部署设施
+            game.deployed.forEach(d => {
+                const p = toScreen(d.x, d.y);
+                const f = facilities[d.type];
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(f.icon, p.x, p.y);
+                ctx.font = 'bold 10px Arial';
+                ctx.fillStyle = '#00ff88';
+                ctx.fillText('L'+d.level, p.x, p.y+14);
+                ctx.fillStyle = '#fff';
+            });
+
+            // 玩家（屏幕中心）
             ctx.fillStyle = '#00ffff';
-            ctx.shadowBlur = 20;
+            ctx.shadowBlur = 15;
             ctx.shadowColor = '#00ffff';
             ctx.beginPath();
-            ctx.arc(game.player.x, game.player.y, 15, 0, Math.PI * 2);
+            ctx.arc(canvas.width/2, canvas.height/2, 12, 0, Math.PI*2);
             ctx.fill();
             ctx.shadowBlur = 0;
 
             requestAnimationFrame(render);
         }
 
-        // 更新
         function update() {
-            // 移动玩家
-            const speed = 3;
-            if (game.keys['w'] || game.keys['ArrowUp']) game.player.y -= speed;
-            if (game.keys['s'] || game.keys['ArrowDown']) game.player.y += speed;
-            if (game.keys['a'] || game.keys['ArrowLeft']) game.player.x -= speed;
-            if (game.keys['d'] || game.keys['ArrowRight']) game.player.x += speed;
+            const sp = 4;
+            if (game.keys['w'] || game.keys['ArrowUp']) game.player.y -= sp;
+            if (game.keys['s'] || game.keys['ArrowDown']) game.player.y += sp;
+            if (game.keys['a'] || game.keys['ArrowLeft']) game.player.x -= sp;
+            if (game.keys['d'] || game.keys['ArrowRight']) game.player.x += sp;
 
-            // 触摸移动
-            if (game.player.targetX !== null) {
-                const dx = game.player.targetX - game.player.x;
-                const dy = game.player.targetY - game.player.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist > 5) {
-                    game.player.x += (dx / dist) * speed;
-                    game.player.y += (dy / dist) * speed;
+            if (game.player.tx !== null) {
+                const tx = game.player.tx + game.cam.x;
+                const ty = game.player.ty + game.cam.y;
+                const dx = tx - game.player.x;
+                const dy = ty - game.player.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist > 3) {
+                    game.player.x += (dx/dist) * sp;
+                    game.player.y += (dy/dist) * sp;
                 }
             }
 
-            // 边界限制
-            game.player.x = Math.max(15, Math.min(canvas.width - 15, game.player.x));
-            game.player.y = Math.max(15, Math.min(canvas.height - 15, game.player.y));
+            game.player.x = Math.max(15, Math.min(WORLD_SIZE-15, game.player.x));
+            game.player.y = Math.max(15, Math.min(WORLD_SIZE-15, game.player.y));
 
-            // 更新UI
             updateUI();
         }
 
-        // 每秒更新
         setInterval(() => {
-            // 计算产出
-            game.evolutionRate = game.deployed.reduce((sum, d) => {
-                return sum + facilities[d.type].output * d.level;
-            }, 0);
-            
-            // 增加进化点
-            game.evolutionPoints += game.evolutionRate;
-            
+            game.rate = game.deployed.reduce((s, d) => s + facilities[d.type].out * d.level, 0);
+            game.points += game.rate;
             updateUI();
         }, 1000);
 
-        // 更新UI
         function updateUI() {
-            document.getElementById('evolutionPoints').textContent = Math.floor(game.evolutionPoints);
-            document.getElementById('evolutionRate').textContent = `+${game.evolutionRate}/s`;
+            document.getElementById('evolutionPoints').textContent = Math.floor(game.points);
+            document.getElementById('evolutionRate').textContent = '+' + game.rate + '/s';
             document.getElementById('deployedCount').textContent = game.deployed.length;
-            document.getElementById('deployLimit').textContent = game.deployLimit;
-            
-            // 部署状态
-            const inZone = isInZone();
-            const statusEl = document.getElementById('deployStatus');
-            if (inZone) {
-                statusEl.textContent = '✓ 可以部署设施';
-                statusEl.classList.add('in-range');
-                document.getElementById('deployPanel').classList.remove('collapsed');
-            } else {
-                statusEl.textContent = '移动到绿色区域部署';
-                statusEl.classList.remove('in-range');
-            }
-            
-            // 进化按钮
-            const evolveCost = game.stage === 1 ? 100 : game.stage === 2 ? 500 : 2000;
-            const evolveBtn = document.getElementById('evolveBtn');
-            if (game.evolutionPoints >= evolveCost) {
-                evolveBtn.classList.add('visible');
-            } else {
-                evolveBtn.classList.remove('visible');
-            }
-            
-            renderFacilityGrid();
-            renderDeployedList();
-        }
+            document.getElementById('deployLimit').textContent = game.limit;
 
-        // 渲染设施按钮
-        function renderFacilityGrid() {
-            const grid = document.getElementById('facilityGrid');
-            const inZone = isInZone();
-            
-            grid.innerHTML = Object.entries(facilities).map(([key, fac]) => {
-                const canAfford = game.evolutionPoints >= fac.cost;
-                const canDeploy = inZone && canAfford && game.deployed.length < game.deployLimit;
-                
-                return `
-                    <button class="facility-btn" ${canDeploy ? '' : 'disabled'} onclick="deploy('${key}')">
-                        <span class="name">${fac.icon} ${fac.name}</span>
-                        <span class="cost">💰 ${fac.cost}</span>
-                        <span class="output">+${fac.output}/s</span>
-                    </button>
-                `;
-            }).join('');
-        }
+            const inZ = inZone();
+            const hint = document.getElementById('statusHint');
+            hint.textContent = inZ ? '✓ 可以部署' : '移动到绿色区域部署';
+            hint.className = 'status-hint ' + (inZ ? 'in-zone' : 'out-zone');
 
-        // 渲染已部署列表
-        function renderDeployedList() {
-            const list = document.getElementById('deployedList');
-            
+            Object.keys(facilities).forEach(k => {
+                const f = facilities[k];
+                const btn = document.getElementById('btn-' + k);
+                btn.disabled = !(inZ && game.points >= f.cost && game.deployed.length < game.limit);
+            });
+
+            const evCost = game.stage === 1 ? 100 : game.stage === 2 ? 500 : 2000;
+            const evBtn = document.getElementById('evolveBtn');
+            evBtn.style.display = game.points >= evCost ? 'block' : 'none';
+
+            const list = document.getElementById('facilityList');
             list.innerHTML = game.deployed.map((d, i) => {
-                const fac = facilities[d.type];
-                const output = fac.output * d.level;
-                const upgradeCost = Math.floor(fac.cost * Math.pow(1.5, d.level));
-                
-                return `
-                    <div class="deployed-item">
-                        <div class="info">
-                            <div class="name">${fac.icon} ${fac.name}</div>
-                            <div class="level">Lv.${d.level}</div>
-                            <div class="output">+${output}/s</div>
-                        </div>
-                        <div class="actions">
-                            <button class="action-btn upgrade" ${game.evolutionPoints >= upgradeCost ? '' : 'disabled'} onclick="upgrade(${i})">⬆</button>
-                            <button class="action-btn remove" onclick="remove(${i})">🗑</button>
-                        </div>
-                    </div>
-                `;
+                const f = facilities[d.type];
+                const out = f.out * d.level;
+                const upCost = Math.floor(f.cost * Math.pow(1.5, d.level));
+                return `<div class="facility-item">
+                    <span>${f.icon} L${d.level} +${out}</span>
+                    <span>
+                        <button class="mini-btn" ${game.points>=upCost?'':'disabled'} onclick="upgrade(${i})">⬆</button>
+                        <button class="mini-btn" onclick="remove(${i})">🗑</button>
+                    </span>
+                </div>`;
             }).join('');
         }
 
-        // 部署设施
         function deploy(type) {
-            if (!isInZone()) return;
-            const fac = facilities[type];
-            if (game.evolutionPoints < fac.cost) return;
-            if (game.deployed.length >= game.deployLimit) return;
-            
-            game.evolutionPoints -= fac.cost;
-            game.deployed.push({ type, level: 1, x: game.player.x, y: game.player.y });
-            
-            // 部署3个后增加上限
-            if (game.deployed.length >= 3 && game.deployLimit === 1) {
-                game.deployLimit = 2;
+            if (!inZone()) return;
+            const f = facilities[type];
+            if (game.points < f.cost) return;
+            if (game.deployed.length >= game.limit) {
+                alert('部署上限 ' + game.limit + '，进化后可增加');
+                return;
             }
-            
+            game.points -= f.cost;
+            game.deployed.push({ type, level: 1, x: game.player.x, y: game.player.y });
             updateUI();
         }
 
-        // 升级设施
-        function upgrade(index) {
-            const d = game.deployed[index];
-            const fac = facilities[d.type];
-            const cost = Math.floor(fac.cost * Math.pow(1.5, d.level));
-            
-            if (game.evolutionPoints < cost) return;
-            
-            game.evolutionPoints -= cost;
+        function upgrade(i) {
+            const d = game.deployed[i];
+            const f = facilities[d.type];
+            const cost = Math.floor(f.cost * Math.pow(1.5, d.level));
+            if (game.points < cost) return;
+            game.points -= cost;
             d.level++;
             updateUI();
         }
 
-        // 移除设施
-        function remove(index) {
-            game.deployed.splice(index, 1);
+        function remove(i) {
+            game.deployed.splice(i, 1);
             updateUI();
         }
 
-        // 进化
-        function attemptEvolve() {
+        function evolve() {
             const cost = game.stage === 1 ? 100 : game.stage === 2 ? 500 : 2000;
-            if (game.evolutionPoints < cost) return;
-            
-            game.evolutionPoints -= cost;
+            if (game.points < cost) return;
+            game.points -= cost;
             game.stage++;
-            game.deployLimit = game.stage;
-            
+            game.limit += 3;
             document.getElementById('stageBadge').textContent = 
-                game.stage === 2 ? '多细胞 (2/3)' : 
-                game.stage === 3 ? '海洋生物 (3/3)' : '已完成';
-            
-            alert(`进化到阶段 ${game.stage}!`);
+                game.stage === 2 ? '多细胞 (2/3)' : game.stage === 3 ? '海洋生物 (3/3)' : '已完成';
             updateUI();
         }
 
-        // 面板切换
-        function togglePanel() {
-            document.getElementById('deployPanel').classList.toggle('collapsed');
-        }
-
-        // 输入处理
         window.addEventListener('keydown', e => game.keys[e.key] = true);
         window.addEventListener('keyup', e => game.keys[e.key] = false);
 
         canvas.addEventListener('touchstart', e => {
             e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            game.player.targetX = touch.clientX - rect.left;
-            game.player.targetY = touch.clientY - rect.top;
-            game.touchId = touch.identifier;
-        }, { passive: false });
+            const t = e.touches[0];
+            const r = canvas.getBoundingClientRect();
+            game.player.tx = t.clientX - r.left;
+            game.player.ty = t.clientY - r.top;
+        }, {passive: false});
 
         canvas.addEventListener('touchmove', e => {
             e.preventDefault();
-            for (let touch of e.touches) {
-                if (touch.identifier === game.touchId) {
-                    const rect = canvas.getBoundingClientRect();
-                    game.player.targetX = touch.clientX - rect.left;
-                    game.player.targetY = touch.clientY - rect.top;
-                    break;
-                }
-            }
-        }, { passive: false });
+            const t = e.touches[0];
+            const r = canvas.getBoundingClientRect();
+            game.player.tx = t.clientX - r.left;
+            game.player.ty = t.clientY - r.top;
+        }, {passive: false});
 
         canvas.addEventListener('touchend', () => {
-            game.player.targetX = null;
-            game.player.targetY = null;
-            game.touchId = null;
+            game.player.tx = null;
+            game.player.ty = null;
         });
 
-        // 初始化
+        canvas.addEventListener('mousedown', e => {
+            const r = canvas.getBoundingClientRect();
+            game.player.tx = e.clientX - r.left;
+            game.player.ty = e.clientY - r.top;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            game.player.tx = null;
+            game.player.ty = null;
+        });
+
         window.addEventListener('resize', resize);
         resize();
         initZones();
-        setInterval(update, 1000 / 60);
+        setInterval(update, 1000/60);
         render();
         updateUI();
     </script>
