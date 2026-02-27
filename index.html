@@ -93,7 +93,9 @@
         .deploy-btn:disabled {
             opacity: 0.3;
         }
-        .deploy-btn .icon { font-size: 22px; }
+        .deploy-btn .icon { font-size: 20px; }
+        .deploy-btn .name { font-size: 11px; color: #fff; }
+        .deploy-btn .cost { font-size: 10px; color: #ffcc00; }
         .deploy-btn .output { color: #00ff88; font-size: 10px; }
         /* 状态提示 */
         .status-hint {
@@ -144,22 +146,56 @@
             cursor: pointer;
             font-size: 10px;
         }
-        /* 进化按钮 */
-        .evolve-btn {
+        /* 进化面板 */
+        .evolve-panel {
             position: fixed;
             top: 100px;
             left: 10px;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+            width: 140px;
+            background: rgba(10, 22, 40, 0.95);
+            border-radius: 12px;
+            padding: 10px;
+            z-index: 90;
+            border: 1px solid rgba(255, 0, 255, 0.3);
+        }
+        .evolve-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+        .evolve-title { color: #ff88ff; font-weight: bold; }
+        .evolve-cost { color: #ffcc00; }
+        .progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff00ff, #8800ff);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .evolve-btn {
+            width: 100%;
+            padding: 6px;
             border: none;
+            border-radius: 6px;
             background: linear-gradient(135deg, #ff00ff, #8800ff);
             color: #fff;
-            font-size: 24px;
+            font-size: 12px;
+            font-weight: bold;
             cursor: pointer;
-            z-index: 90;
-            display: none;
         }
+        .evolve-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        /* 旧进化按钮样式移除 */
         .evolve-btn.visible { display: block; }
     </style>
 </head>
@@ -182,22 +218,34 @@
         <div class="deploy-buttons">
             <button class="deploy-btn" id="btn-basic" onclick="deploy('basic')">
                 <span class="icon">🔵</span>
-                <span>5</span>
-                <span class="output">+0.5</span>
+                <span class="name">基础</span>
+                <span class="cost">💰5</span>
+                <span class="output">+0.5/s</span>
             </button>
             <button class="deploy-btn" id="btn-collector" onclick="deploy('collector')">
                 <span class="icon">🌊</span>
-                <span>10</span>
-                <span class="output">+1</span>
+                <span class="name">收集</span>
+                <span class="cost">💰10</span>
+                <span class="output">+1/s</span>
             </button>
             <button class="deploy-btn" id="btn-booster" onclick="deploy('booster')">
                 <span class="icon">⚡</span>
-                <span>25</span>
-                <span class="output">+3</span>
+                <span class="name">加速</span>
+                <span class="cost">💰25</span>
+                <span class="output">+3/s</span>
             </button>
         </div>
         
-        <button class="evolve-btn" id="evolveBtn" onclick="evolve()">🧬</button>
+        <div class="evolve-panel" id="evolvePanel">
+            <div class="evolve-info">
+                <span class="evolve-title">🧬 进化</span>
+                <span class="evolve-cost" id="evolveCost">需要: 100 ✨</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="evolveProgress"></div>
+            </div>
+            <button class="evolve-btn" id="evolveBtn" onclick="evolve()" disabled>进化</button>
+        </div>
         
         <div class="facility-list">
             <div style="text-align:center;margin-bottom:8px;">已部署: <span id="deployedCount">0</span>/<span id="deployLimit">5</span></div>
@@ -393,7 +441,19 @@
 
             const evCost = game.stage === 1 ? 100 : game.stage === 2 ? 500 : 2000;
             const evBtn = document.getElementById('evolveBtn');
-            evBtn.style.display = game.points >= evCost ? 'block' : 'none';
+            const evCostEl = document.getElementById('evolveCost');
+            const evProgress = document.getElementById('evolveProgress');
+            
+            // 更新进化成本显示
+            evCostEl.textContent = `需要: ${evCost} ✨`;
+            
+            // 更新进度条
+            const progress = Math.min(100, (game.points / evCost) * 100);
+            evProgress.style.width = progress + '%';
+            
+            // 更新按钮状态
+            evBtn.disabled = game.points < evCost;
+            evBtn.textContent = game.points >= evCost ? '点击进化!' : `${Math.floor(game.points)}/${evCost}`;
 
             const list = document.getElementById('facilityList');
             list.innerHTML = game.deployed.map((d, i) => {
